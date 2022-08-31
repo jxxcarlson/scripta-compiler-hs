@@ -1,0 +1,6 @@
+packages:
+- .
+resolver: lts-16.18
+
+
+
