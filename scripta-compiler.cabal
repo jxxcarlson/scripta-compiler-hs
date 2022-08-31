@@ -25,7 +25,9 @@ source-repository head
 
 library
   exposed-modules:
+      Language
       Lib
+      Line
       PrimitiveBlock
   other-modules:
       Paths_scripta_compiler
@@ -34,6 +36,7 @@ library
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
       base >=4.7 && <5
+    , flow
     , text
   default-language: Haskell2010
 
@@ -46,6 +49,7 @@ executable scripta-compiler-exe
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
+    , flow
     , scripta-compiler
     , text
   default-language: Haskell2010
@@ -60,6 +64,7 @@ test-suite scripta-compiler-test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
+    , flow
     , scripta-compiler
     , text
   default-language: Haskell2010
