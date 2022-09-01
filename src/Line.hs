@@ -3,16 +3,22 @@
 module Line(PrimitiveBlockType(..), Line, getNameAndArgs, isEmpty, indent, prefix,content, lineNumber, position, classify, getBlockType) where
 
 -- https://markkarpov.com/tutorial/megaparsec.html
+-- https://serokell.io/blog/parser-combinators-in-haskell
+-- https://akashagrawal.me/2017/01/19/beginners-guide-to-megaparsec.html
 
 import Data.Text.Lazy as Text ( unpack, Text, take, strip, words, drop )
 import Data.Functor.Identity (Identity)
 import Data.Maybe(maybe)
+import Data.Void
 import Text.Megaparsec
+
 
 import Language (Language(..)) 
 
 
-type Parsec e s a = ParsecT e s Identity a
+-- type Parsec e s a = ParsecT e s Identity a
+
+type Parser s = ParsecT Data.Void.Void s Identity Text
 
 data PrimitiveBlockType = PBVerbatim | PBOrdinary | PBParagraph deriving (Show, Eq)
 
@@ -114,3 +120,22 @@ getNameAndArgs line =
 head_ :: [a] -> Maybe a 
 head_ [] = Nothing 
 head_ (first:rest) = Just first
+
+
+{-
+lineParser : Int -> Int -> Parser Line
+lineParser position lineNumber =
+    Parser.succeed (\prefixStart prefixEnd lineEnd content
+    -> {   indent = prefixEnd - prefixStart
+         , prefix = String.slice 0 prefixEnd content
+         , content = String.slice prefixEnd lineEnd content
+         , position = position
+         , lineNumber = lineNumber }
+       )
+        |= Parser.getOffset
+        |. Parser.chompWhile (\c -> c == ' ')
+        |= Parser.getOffset
+        |. Parser.chompWhile (\c -> c /= '\n')
+        |= Parser.getOffset
+        |= Parser.getSource
+-}

@@ -28,6 +28,7 @@ library
       Language
       Lib
       Line
+      MyParser
       PrimitiveBlock
       TestData
   other-modules:
