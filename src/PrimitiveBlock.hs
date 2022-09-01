@@ -1,12 +1,13 @@
-{-# LANGUAGE OverloadedStrings, DuplicateRecordFields, OverloadedLabels #-}
+{-# LANGUAGE OverloadedStrings, NoImplicitPrelude, DuplicateRecordFields, OverloadedLabels #-}
 
 -- OverloadedRecordDot
 -- https://pure-hack.com/posts/overloaded-labels-in-haskell/
 
 module PrimitiveBlock (PrimitiveBlock, empty, Step(..), loop) where
 
-import Data.Text.Lazy as Text (Text, intercalate, empty, length, fromChunks, strip)
-import Line (PrimitiveBlockType(..),Line,indent, prefix, content, lineNumber, position, classify, getBlockType) 
+import Data.Text.Lazy as Text (Text, concat, intercalate, length, fromChunks, strip)
+import Line (PrimitiveBlockType(..),Line,indent, isEmpty, getNameAndArgs, prefix, content, lineNumber, position, classify, getBlockType) 
+import Prelude
 import Language (Language(..)) 
 import Flow ((|>))
 
@@ -16,11 +17,11 @@ data PrimitiveBlock = PrimitiveBlock
     , position  :: Int
     , args :: [Text]
     , content  :: [Text]
-    , name  :: Text
+    , name  :: Maybe Text
     , named :: Bool
     , blockType  :: PrimitiveBlockType
     , sourceText :: Text
-    } deriving (Show)
+    } deriving (Show, Eq)
 
 
 empty :: PrimitiveBlock
@@ -30,7 +31,7 @@ empty =
     , lineNumber = 0
     , position = 0
     , content = []
-    , name = "anon"
+    , name = Nothing
     , args = []
     , named = False
     , sourceText = ""
@@ -44,15 +45,30 @@ data State =
     , lang :: Language
     , lines_ :: [Text]
     , inBlock :: Bool
+    , inVerbatim :: Bool
     , indent :: Int
     , currentLineNumber :: Int
     , cursor :: Int
-    , inVerbatim :: Bool
     , isVerbatimLine :: Text -> Bool
     , count :: Int
     , label :: Text
     }
 
+init :: Language -> (Text -> Bool) ->  [Text] -> State
+init lang isVerbatimLine lines =
+   State{ blocks = []
+    , currentBlock = Nothing
+    , lang = lang
+    , lines_ = lines
+    , indent = 0
+    , currentLineNumber = 0
+    , cursor = 0
+    , inBlock = False
+    , inVerbatim = False
+    , isVerbatimLine = isVerbatimLine
+    , count = 0
+    , label = "0, START"
+    }
 
 data Step state a
     = Loop state
@@ -75,10 +91,27 @@ parse lang isVerbatimLine lines_ =
             lines_ |> parse_ lang isVerbatimLine
 
         
-parse_ :: Language -> (String -> Bool) ->  [Text] -> [PrimitiveBlock]
+parse_ :: Language -> (Text -> Bool) ->  [Text] -> [PrimitiveBlock]
 parse_ lang isVerbatimLine lines_ =
-    loop (init lang isVerbatimLine lines_) nextStep
+    loop (PrimitiveBlock.init lang isVerbatimLine lines_) nextStep
         |> map (\block -> finalize block)
+
+-- init :: Language -> (Text -> Bool) ->  [Text] -> State
+-- init lang isVerbatimLine lines =
+--     State{ blocks = []
+--     , currentBlock = Nothing
+--     , lang = lang
+--     , lines_ = lines
+--     , indent = 0
+--     , lineNumber = 0
+--     , inBlock = False
+--     , position = 0
+--     , inVerbatim = False
+--     , isVerbatimLine = isVerbatimLine
+--     , count = 0
+--     , label = "0, START"
+--     }
+
 
 head_ :: [a] -> Maybe a 
 head_ [] = Nothing 
@@ -119,7 +152,7 @@ nextStep state =
                     -- TODO: the below is wrong
                     Line.classify (cursor state) (currentLineNumber state + 1) rawLine
             in
-            case ( inBlock state, currentLine == Text.empty, isNonEmptyBlank currentLine ) of
+            case ( inBlock state, Line.isEmpty currentLine, isNonEmptyBlank currentLine ) of
                 -- not in a block, pass over empty line
                 ( False, True, _ ) ->
                     Loop (advance newCursor state{label = "1, EMPTY" })
@@ -168,7 +201,7 @@ finalize block =
 
 isNonEmptyBlank :: Line -> Bool
 isNonEmptyBlank line =
-   Line.indent line > 0 && Line.content line == Text.empty
+   Line.indent line > 0 && Line.content line == ""
 
 
 advance :: Int -> State -> State
@@ -215,7 +248,7 @@ blockFromLine lang line =
    PrimitiveBlock { indent = Line.indent line
     , lineNumber = Line.lineNumber line
     , position = Line.position line
-    , content = Text.fromChunks [Line.prefix, Line.content] 
+    , content =  [""] -- [Text.fromChunks [Line.prefix line, Line.content line]]
     , name = Nothing
     , args = []
     , named = False
@@ -231,20 +264,105 @@ elaborate line pb =
         pb
 
     else 
-        if (content pb) == [ "" ] then
+        if (PrimitiveBlock.content pb) == [ "" ] then
         pb
 
         else
             let
                 ( name, args ) =
                     -- TODO: note this change: it needs to be verified
-                    Line.getNameAndArgs L0Lang line
+                    Line.getNameAndArgs line
 
                 content =
                     if (blockType pb) == PBVerbatim then
-                        map Text.strip (content pb)
 
-                    else
-                        (content pb)
+                        map Text.strip (PrimitiveBlock.content pb)
+
+                    else (PrimitiveBlock.content pb)
             in
             pb{ content = content, name = name, args = args, named = True }
+
+
+addCurrentLine2 :: State -> Line -> State
+addCurrentLine2 state currentLine =
+    case currentBlock state of
+        Nothing ->
+            state{ lines_ = Prelude.drop 1 (lines_ state) }
+
+        Just block ->
+            state{lines_ = Prelude.drop 1 (lines_ state)
+                , currentLineNumber = currentLineNumber state + 1
+                , cursor = (cursor state)+ (Text.length (Line.content currentLine) |> fromIntegral)
+                , count = (count state) + 1
+                , currentBlock =
+                    Just (addCurrentLine currentLine block)
+            }
+
+addCurrentLine :: Line -> PrimitiveBlock -> PrimitiveBlock
+addCurrentLine line block =
+    let
+        pb =
+            addCurrentLine_ line block
+    in
+    elaborate line pb            
+
+
+addCurrentLine_ :: Line -> PrimitiveBlock -> PrimitiveBlock
+addCurrentLine_ line block =
+    if blockType block == PBVerbatim then
+        if name block == Just "math" then
+            block{  content = Line.content line : PrimitiveBlock.content block 
+            ,sourceText = Text.concat [sourceText block, "\n",  Line.prefix line, Line.content line ]}
+
+        else
+            block{ content = (Text.concat [Line.prefix line,  Line.content line]) : PrimitiveBlock.content block
+            ,sourceText = Text.concat [sourceText block, "\n",  Line.prefix line, Line.content line ]}
+
+    else
+        block{ content = Line.content line :  PrimitiveBlock.content block
+         ,sourceText = Text.concat [sourceText block, "\n",  Line.prefix line, Line.content line ]}
+
+
+
+commitBlock :: State -> Line -> State
+commitBlock state currentLine =
+    case currentBlock state of
+        Nothing ->
+            state{ 
+                 lines_ = Prelude.drop 1 (lines_ state)
+                , indent = Line.indent currentLine
+            }
+
+        Just block ->
+            let
+                ( currentBlock, newBlocks ) =
+                    if PrimitiveBlock.content block == [ "" ] then
+                        ( Nothing, blocks state )
+
+                    else
+                        ( Just (blockFromLine (lang state) currentLine), block : blocks state )
+            in
+            state{ 
+                 lines_ = Prelude.drop 1 (lines_ state)
+                , currentLineNumber = currentLineNumber state + 1
+                , cursor = cursor state + (Text.length (Line.content currentLine) |> fromIntegral)
+                , count = count state + 1
+                , blocks = newBlocks
+                , inBlock = False
+                , inVerbatim = (isVerbatimLine state) (Line.content currentLine)
+                , currentBlock = currentBlock
+            }
+-- data Stssate =
+--    Stssate { blocks ::  [PrimitiveBlock]
+--     , currentBlock :: Maybe PrimitiveBlock
+--     , lang :: Language
+--     , lines_ :: [Text]
+--     , inBlock :: Bool
+--     , inVerbatim :: Bool
+--     , indent :: Int
+--     , currentLineNumber :: Int
+--     , cursor :: Int
+--     , isVerbatimLine :: Text -> Bool
+--     , count :: Int
+--     , label :: Text
+--     }
