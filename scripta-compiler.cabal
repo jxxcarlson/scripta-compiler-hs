@@ -31,6 +31,8 @@ library
       MyParser
       PrimitiveBlock
       TestData
+      TextParser
+      XParser
   other-modules:
       Paths_scripta_compiler
   hs-source-dirs:
