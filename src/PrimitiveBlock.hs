@@ -3,7 +3,7 @@
 -- OverloadedRecordDot
 -- https://pure-hack.com/posts/overloaded-labels-in-haskell/
 
-module PrimitiveBlock (PrimitiveBlock, empty, Step(..), loop) where
+module PrimitiveBlock (PrimitiveBlock, empty, parse) where
 
 import Data.Text.Lazy as Text (Text, concat, intercalate, length, fromChunks, strip)
 import Line (PrimitiveBlockType(..),Line,indent, isEmpty, getNameAndArgs, prefix, content, lineNumber, position, classify, getBlockType) 
@@ -80,7 +80,7 @@ data Step state a
 language and a function for determining when a string is the first line
 of a verbatim block
 -}
-parse ::Language -> (Text -> Bool) ->  [Text] ->  [PrimitiveBlock]
+parse :: Language -> (Text -> Bool) ->  [Text] ->  [PrimitiveBlock]
 parse lang isVerbatimLine lines_ =
     case lang of
         L0Lang ->

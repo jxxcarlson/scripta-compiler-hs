@@ -29,6 +29,7 @@ library
       Lib
       Line
       PrimitiveBlock
+      TestData
   other-modules:
       Paths_scripta_compiler
   hs-source-dirs:
