@@ -19,7 +19,7 @@ import Flow ((|>))
 import Language (Language(..)) 
 
 data Line =
-    Line { indent :: Int, prefix :: Text, content :: Text, lineNumber :: Int, position :: Int }
+    Line { indent :: Int, prefix :: Text, content :: Text, lineNumber :: Int, position :: Int } deriving(Show)
 
 type LineParser = Parsec Data.Void.Void Text
 
@@ -27,8 +27,10 @@ data PrimitiveBlockType = PBVerbatim | PBOrdinary | PBParagraph deriving (Show, 
 
 
 classify :: Int -> Int -> Text -> Line
-classify position lineNumber str =
-    Line {indent = 0, prefix = "", content = "", lineNumber = 0, position = 0}
+classify position lineNumber txt =
+     case parseMaybe (lineParser position lineNumber) txt of 
+        Nothing -> Line {indent = 0, prefix = "", content = "", lineNumber = 0, position = 0}
+        Just l -> l
 
 isEmpty :: Line -> Bool
 isEmpty line =
@@ -122,27 +124,24 @@ head_ [] = Nothing
 head_ (first:rest) = Just first
 
 
+data Error i e
+  = EndOfInput  -- Expected more input, but there is nothing
+  | Unexpected i  -- We didn't expect to find this element
+  | CustomError e  -- Extra errors the user may want to create
+  | Empty  -- Used in `Alternative` implementation of `empty`
+  deriving (Eq, Show)
 
 
+lineParser :: Int -> Int -> LineParser Line
+lineParser position lineNumber = 
+  do 
+    prefix <- many (satisfy (\c -> c == ' ')) 
+    content <- many (satisfy (\c -> c /= '\n')) 
+    rawContent <- getInput
+    return Line {indent =  length prefix, prefix = pack prefix, position = position, lineNumber = lineNumber, content = pack content}
 
--- data Error i e
---   = EndOfInput  -- Expected more input, but there is nothing
---   | Unexpected i  -- We didn't expect to find this element
---   | CustomError e  -- Extra errors the user may want to create
---   | Empty  -- Used in `Alternative` implementation of `empty`
---   deriving (Eq, Show)
-
-
--- lineParser :: Int -> Int -> LineParser Line
--- lineParser position lineNumber = 
---   do 
---     prefix <- many (satisfy (\c -> c == ' ')) 
---     content <- many (satisfy (\c -> c /= '\n')) 
---     rawContent <- getInput
---     return Line {indent =  length prefix, prefix = prefix, position = position, lineNumber = lineNumber, content = content}
-
--- slice :: Int -> Int -> [a] -> [a]
--- slice from to xs = Prelude.take (to - from + 1) (Prelude.drop from xs)
+slice :: Int -> Int -> [a] -> [a]
+slice from to xs = Prelude.take (to - from + 1) (Prelude.drop from xs)
 
 
--- parseLine position lineNumber str = parseTest (lineParser position lineNumber) (pack str)
+parseLine position lineNumber str = parseTest (lineParser position lineNumber) (pack str)
