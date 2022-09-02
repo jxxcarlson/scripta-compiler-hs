@@ -12,6 +12,7 @@ import Line (PrimitiveBlockType(..),Line,indent, isEmpty, getNameAndArgs, prefix
 import Prelude
 import Language (Language(..)) 
 import Flow ((|>))
+import Debug.Trace
 
 data PrimitiveBlock = PrimitiveBlock
     { indent :: Int
@@ -54,7 +55,15 @@ data State =
     , isVerbatimLine :: Text -> Bool
     , count :: Int
     , label :: Text
-    }
+    } 
+
+xlog :: Show a => String -> a -> a
+xlog msg a = Debug.Trace.trace (msg <> ": " <> show a) a
+
+instance Show State where
+  show state = 
+    -- do your string formatting here, possibly calling `show` on fields
+    show (((count state), fmap PrimitiveBlock.content (currentBlock state), map PrimitiveBlock.content $ blocks state) )
 
 init :: Language -> (Text -> Bool) ->  [Text] -> State
 init lang isVerbatimLine lines =
@@ -70,7 +79,7 @@ init lang isVerbatimLine lines =
     , isVerbatimLine = isVerbatimLine
     , count = 0
     , label = "0, START"
-    }
+    } |> xlog "initial state "
 
 data Step state a
     = Loop state
@@ -86,38 +95,22 @@ parse :: Language -> (Text -> Bool) ->  [Text] ->  [PrimitiveBlock]
 parse lang isVerbatimLine lines_ =
     case lang of
         L0Lang ->
-            lines_ |> parse_ lang isVerbatimLine
+            lines_ |> xlog "parse, lines (1)" |> parse2 lang isVerbatimLine |> xlog "OUT"
 
         MicroLaTeXLang ->
             --lines_ |> MicroLaTeX.Parser.TransformLaTeX.toL0 |> parse_ lang isVerbatimLine
-            lines_ |> parse_ lang isVerbatimLine
+            lines_ |> parse2 lang isVerbatimLine
 
         
-parse_ :: Language -> (Text -> Bool) ->  [Text] -> [PrimitiveBlock]
-parse_ lang isVerbatimLine lines_ =
-    loop (PrimitiveBlock.init lang isVerbatimLine lines_) nextStep
+parse2 :: Language -> (Text -> Bool) ->  [Text] -> [PrimitiveBlock]
+parse2 lang isVerbatimLine lines2 =
+    loop (PrimitiveBlock.init lang isVerbatimLine lines2) nextStep
         |> map (\block -> finalize block)
 
--- init :: Language -> (Text -> Bool) ->  [Text] -> State
--- init lang isVerbatimLine lines =
---     State{ blocks = []
---     , currentBlock = Nothing
---     , lang = lang
---     , lines_ = lines
---     , indent = 0
---     , lineNumber = 0
---     , inBlock = False
---     , position = 0
---     , inVerbatim = False
---     , isVerbatimLine = isVerbatimLine
---     , count = 0
---     , label = "0, START"
---     }
 
-
-head_ :: [a] -> Maybe a 
-head_ [] = Nothing 
-head_ (first:srest) = Just first
+head_ :: [Text] -> Maybe Text
+head_ [] = Nothing |> xlog "head_ (1)"
+head_ (first:srest) = Just first |> xlog "head_ (2)"
 
 nextStep :: State -> Step State  [PrimitiveBlock]
 nextStep state =
@@ -125,7 +118,7 @@ nextStep state =
         Nothing ->
             case currentBlock state of
                 Nothing ->
-                    Done (reverse $ blocks $ state)
+                    Done (reverse $ blocks $ (state |> xlog "DONE, state"))
 
                 Just block ->
                     let
@@ -138,16 +131,16 @@ nextStep state =
                                 -- Debug.log (Tools.cyan "****, DONE" 13)
                                 reverse (block : (blocks state))
                     in
-                    Done newBlocks
+                    Done (newBlocks |> xlog "Done, newBlocks")
 
         Just rawLine ->
             let
                 newCursor =
-                    if rawLine == "" then
+                    (if rawLine == "" then
                         cursor state + 1
 
                     else
-                        cursor state + (Text.length rawLine |> fromIntegral) + 1
+                        cursor state + (Text.length rawLine |> fromIntegral) + 1) |> xlog "rawLine, cursor"
 
                 currentLine :: Line
                 currentLine =
@@ -157,7 +150,7 @@ nextStep state =
             case ( inBlock state, Line.isEmpty currentLine, isNonEmptyBlank currentLine ) of
                 -- not in a block, pass over empty line
                 ( False, True, _ ) ->
-                    Loop (advance newCursor state{label = "1, EMPTY" })
+                    Loop (advance newCursor state{label = "1, EMPTY" }) 
 
                 -- not in a block, pass over blank, non-empty line
                 ( False, False, True ) ->
@@ -198,7 +191,7 @@ finalize block =
             Text.intercalate "\n" finalContent
 
     in
-    PrimitiveBlock{content = finalContent, sourceText = sourceText }
+    block{content = finalContent, sourceText = sourceText }
 
 
 isNonEmptyBlank :: Line -> Bool
@@ -212,7 +205,7 @@ advance newCursor state =
         , currentLineNumber = (currentLineNumber state) + 1
         , cursor = newCursor
         , count = (count state) + 1
-    }
+    } |> xlog "advance"
 
 createBlock :: State -> Line -> State
 createBlock state currentLine =
@@ -242,7 +235,7 @@ createBlock state currentLine =
         , inBlock = True
         , currentBlock = newBlock
         , blocks = newBlocks
-    }
+    } |> xlog "createBlock"
 
 blockFromLine :: Language -> Line -> PrimitiveBlock
 -- blockFromLine lang ({ indent, lineNumber, position, prefix, content } as line) =
@@ -282,14 +275,14 @@ elaborate line pb =
 
                     else (PrimitiveBlock.content pb)
             in
-            pb{ content = content, name = name, args = args, named = True }
+            pb{ content = content, name = name, args = args, named = True } |> xlog "elaborate"
 
 
 addCurrentLine2 :: State -> Line -> State
 addCurrentLine2 state currentLine =
     case currentBlock state of
         Nothing ->
-            state{ lines_ = Prelude.drop 1 (lines_ state) }
+            state{ lines_ = Prelude.drop 1 (lines_ state) } |> xlog "addCurrentLine2 (1)"
 
         Just block ->
             state{lines_ = Prelude.drop 1 (lines_ state)
@@ -298,13 +291,13 @@ addCurrentLine2 state currentLine =
                 , count = (count state) + 1
                 , currentBlock =
                     Just (addCurrentLine currentLine block)
-            }
+            } |> xlog "addCurrentLine2 (2)"
 
 addCurrentLine :: Line -> PrimitiveBlock -> PrimitiveBlock
 addCurrentLine line block =
     let
         pb =
-            addCurrentLine_ line block
+            addCurrentLine_ line block |> xlog "addCurrentLine"
     in
     elaborate line pb            
 
@@ -314,16 +307,16 @@ addCurrentLine_ line block =
     if blockType block == PBVerbatim then
         if name block == Just "math" then
             block{  content = Line.content line : PrimitiveBlock.content block 
-            ,sourceText = Text.concat [sourceText block, "\n",  Line.prefix line, Line.content line ]}
+            ,sourceText = Text.concat [sourceText block, "\n",  Line.prefix line, Line.content line ]} |> xlog "addCurrentLine_ (1)"
 
         else
             block{ content = (Text.concat [Line.prefix line,  Line.content line]) : PrimitiveBlock.content block
-            ,sourceText = Text.concat [sourceText block, "\n",  Line.prefix line, Line.content line ]}
+            ,sourceText = Text.concat [sourceText block, "\n",  Line.prefix line, Line.content line ]}  |> xlog "addCurrentLine_ (2)"
 
     else
         block{ content = Line.content line :  PrimitiveBlock.content block
-         ,sourceText = Text.concat [sourceText block, "\n",  Line.prefix line, Line.content line ]}
-
+         ,sourceText = Text.concat [sourceText block, "\n",  Line.prefix line, Line.content line ]}  |> xlog "addCurrentLine_ (3)"
+ 
 
 
 commitBlock :: State -> Line -> State
@@ -333,7 +326,7 @@ commitBlock state currentLine =
             state{ 
                  lines_ = Prelude.drop 1 (lines_ state)
                 , indent = Line.indent currentLine
-            }
+            } |> xlog "commitBlock (1)"
 
         Just block ->
             let
@@ -353,18 +346,4 @@ commitBlock state currentLine =
                 , inBlock = False
                 , inVerbatim = (isVerbatimLine state) (Line.content currentLine)
                 , currentBlock = currentBlock
-            }
--- data Stssate =
---    Stssate { blocks ::  [PrimitiveBlock]
---     , currentBlock :: Maybe PrimitiveBlock
---     , lang :: Language
---     , lines_ :: [Text]
---     , inBlock :: Bool
---     , inVerbatim :: Bool
---     , indent :: Int
---     , currentLineNumber :: Int
---     , cursor :: Int
---     , isVerbatimLine :: Text -> Bool
---     , count :: Int
---     , label :: Text
---     }
+            } |> xlog "commitBlock (2)"

@@ -10,7 +10,7 @@ import Language (Language(..))
 import Flow ((|>))
 import TextParser()
 
-xstr = "abc\n\ndef\n\n"
+xstr = "abc\ndef\n\nuvw\n\n"
 
 p :: String -> [PrimitiveBlock]
-p str = parse L0Lang (\_ -> False) (str |> Text.pack |> Text.lines)
+p str = parse L0Lang (\_ -> True) (str |> Text.pack |> Text.lines)
