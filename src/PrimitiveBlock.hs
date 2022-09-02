@@ -63,7 +63,8 @@ xlog msg a = Debug.Trace.trace (msg <> ": " <> show a) a
 instance Show State where
   show state = 
     -- do your string formatting here, possibly calling `show` on fields
-    show (((count state), fmap PrimitiveBlock.content (currentBlock state), map PrimitiveBlock.content $ blocks state) )
+    -- show (((count state), fmap PrimitiveBlock.content (currentBlock state), map PrimitiveBlock.content $ blocks state) )
+    show (((label state), map PrimitiveBlock.content $ blocks state) )
 
 init :: Language -> (Text -> Bool) ->  [Text] -> State
 init lang isVerbatimLine lines =
@@ -79,7 +80,7 @@ init lang isVerbatimLine lines =
     , isVerbatimLine = isVerbatimLine
     , count = 0
     , label = "0, START"
-    } |> xlog "initial state "
+    }
 
 data Step state a
     = Loop state
@@ -95,7 +96,7 @@ parse :: Language -> (Text -> Bool) ->  [Text] ->  [PrimitiveBlock]
 parse lang isVerbatimLine lines_ =
     case lang of
         L0Lang ->
-            lines_ |> xlog "parse, lines (1)" |> parse2 lang isVerbatimLine |> xlog "OUT"
+            lines_ |> parse2 lang isVerbatimLine 
 
         MicroLaTeXLang ->
             --lines_ |> MicroLaTeX.Parser.TransformLaTeX.toL0 |> parse_ lang isVerbatimLine
@@ -109,8 +110,8 @@ parse2 lang isVerbatimLine lines2 =
 
 
 head_ :: [Text] -> Maybe Text
-head_ [] = Nothing |> xlog "head_ (1)"
-head_ (first:srest) = Just first |> xlog "head_ (2)"
+head_ [] = Nothing 
+head_ (first:srest) = Just first
 
 nextStep :: State -> Step State  [PrimitiveBlock]
 nextStep state =
@@ -118,7 +119,7 @@ nextStep state =
         Nothing ->
             case currentBlock state of
                 Nothing ->
-                    Done (reverse $ blocks $ (state |> xlog "DONE, state"))
+                    Done (reverse $ blocks $ state)
 
                 Just block ->
                     let
@@ -131,21 +132,21 @@ nextStep state =
                                 -- Debug.log (Tools.cyan "****, DONE" 13)
                                 reverse (block : (blocks state))
                     in
-                    Done (newBlocks |> xlog "Done, newBlocks")
+                    Done newBlocks
 
         Just rawLine ->
             let
                 newCursor =
                     (if rawLine == "" then
-                        cursor state + 1
+                        cursor state + 1 
 
                     else
-                        cursor state + (Text.length rawLine |> fromIntegral) + 1) |> xlog "rawLine, cursor"
+                        cursor state + (Text.length rawLine |> fromIntegral) + 1) 
 
                 currentLine :: Line
                 currentLine =
                     -- TODO: the below is wrong
-                    Line.classify (cursor state) (currentLineNumber state + 1) rawLine
+                    Line.classify (cursor state) (currentLineNumber state + 1) rawLine 
             in
             case ( inBlock state, Line.isEmpty currentLine, isNonEmptyBlank currentLine ) of
                 -- not in a block, pass over empty line
@@ -205,7 +206,7 @@ advance newCursor state =
         , currentLineNumber = (currentLineNumber state) + 1
         , cursor = newCursor
         , count = (count state) + 1
-    } |> xlog "advance"
+    } 
 
 createBlock :: State -> Line -> State
 createBlock state currentLine =
@@ -213,19 +214,19 @@ createBlock state currentLine =
         newBlocks =
             case currentBlock state of
                 Nothing ->
-                    blocks state
+                    blocks state 
 
                 -- When creating a new block push the current block onto state.blocks
                 -- only if its content is nontrivial (not == [""])
                 Just block ->
                     if PrimitiveBlock.content block == [] then
-                        blocks state
+                        blocks state 
 
                     else
-                        block : (blocks state)
+                        block : (blocks state) 
 
         newBlock =
-            Just (blockFromLine (lang state) currentLine)
+            Just (blockFromLine (lang state) currentLine) 
     in
     state{lines_ = drop 1 (lines_ state)
         , currentLineNumber = (currentLineNumber state) + 1
@@ -235,7 +236,7 @@ createBlock state currentLine =
         , inBlock = True
         , currentBlock = newBlock
         , blocks = newBlocks
-    } |> xlog "createBlock"
+    } 
 
 blockFromLine :: Language -> Line -> PrimitiveBlock
 -- blockFromLine lang ({ indent, lineNumber, position, prefix, content } as line) =
@@ -243,14 +244,14 @@ blockFromLine lang line =
    PrimitiveBlock { indent = Line.indent line
     , lineNumber = Line.lineNumber line
     , position = Line.position line
-    , content =  [""] -- [Text.fromChunks [Line.prefix line, Line.content line]]
+    , content =  [Line.content line] -- [Text.fromChunks [Line.prefix line, Line.content line]]
     , name = Nothing
     , args = []
     , named = False
     , sourceText = ""
     , blockType = Line.getBlockType lang (Line.content line)
     }
-        |> elaborate line
+        |> elaborate line 
 
 
 elaborate :: Line -> PrimitiveBlock -> PrimitiveBlock
@@ -275,14 +276,14 @@ elaborate line pb =
 
                     else (PrimitiveBlock.content pb)
             in
-            pb{ content = content, name = name, args = args, named = True } |> xlog "elaborate"
+            pb{ content = content, name = name, args = args, named = True }
 
 
 addCurrentLine2 :: State -> Line -> State
 addCurrentLine2 state currentLine =
     case currentBlock state of
         Nothing ->
-            state{ lines_ = Prelude.drop 1 (lines_ state) } |> xlog "addCurrentLine2 (1)"
+            state{ lines_ = Prelude.drop 1 (lines_ state) } 
 
         Just block ->
             state{lines_ = Prelude.drop 1 (lines_ state)
@@ -291,13 +292,13 @@ addCurrentLine2 state currentLine =
                 , count = (count state) + 1
                 , currentBlock =
                     Just (addCurrentLine currentLine block)
-            } |> xlog "addCurrentLine2 (2)"
+            }
 
 addCurrentLine :: Line -> PrimitiveBlock -> PrimitiveBlock
 addCurrentLine line block =
     let
         pb =
-            addCurrentLine_ line block |> xlog "addCurrentLine"
+            addCurrentLine_ line block 
     in
     elaborate line pb            
 
@@ -307,15 +308,15 @@ addCurrentLine_ line block =
     if blockType block == PBVerbatim then
         if name block == Just "math" then
             block{  content = Line.content line : PrimitiveBlock.content block 
-            ,sourceText = Text.concat [sourceText block, "\n",  Line.prefix line, Line.content line ]} |> xlog "addCurrentLine_ (1)"
+            ,sourceText = Text.concat [sourceText block, "\n",  Line.prefix line, Line.content line ]}
 
         else
             block{ content = (Text.concat [Line.prefix line,  Line.content line]) : PrimitiveBlock.content block
-            ,sourceText = Text.concat [sourceText block, "\n",  Line.prefix line, Line.content line ]}  |> xlog "addCurrentLine_ (2)"
+            ,sourceText = Text.concat [sourceText block, "\n",  Line.prefix line, Line.content line ]}  
 
     else
         block{ content = Line.content line :  PrimitiveBlock.content block
-         ,sourceText = Text.concat [sourceText block, "\n",  Line.prefix line, Line.content line ]}  |> xlog "addCurrentLine_ (3)"
+         ,sourceText = Text.concat [sourceText block, "\n",  Line.prefix line, Line.content line ]}  
  
 
 
@@ -326,7 +327,7 @@ commitBlock state currentLine =
             state{ 
                  lines_ = Prelude.drop 1 (lines_ state)
                 , indent = Line.indent currentLine
-            } |> xlog "commitBlock (1)"
+            } 
 
         Just block ->
             let
@@ -346,4 +347,4 @@ commitBlock state currentLine =
                 , inBlock = False
                 , inVerbatim = (isVerbatimLine state) (Line.content currentLine)
                 , currentBlock = currentBlock
-            } |> xlog "commitBlock (2)"
+            }
