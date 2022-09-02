@@ -6,24 +6,24 @@ module Line(PrimitiveBlockType(..), Line, getNameAndArgs, isEmpty, indent, prefi
 -- https://serokell.io/blog/parser-combinators-in-haskell
 -- https://akashagrawal.me/2017/01/19/beginners-guide-to-megaparsec.html
 
-import Data.Text.Lazy as Text ( unpack, Text, take, strip, words, drop )
+import Data.Text.Lazy as Text ( pack, unpack, Text, take, strip, words, drop )
 import Data.Functor.Identity (Identity)
 import Data.Maybe(maybe)
-import Data.Void
 import Text.Megaparsec
+import Text.Megaparsec.Char
+import Data.Functor.Identity (Identity)
+import Data.Void (Void)
+import Flow ((|>))
 
 
 import Language (Language(..)) 
 
-
--- type Parsec e s a = ParsecT e s Identity a
-
-type Parser s = ParsecT Data.Void.Void s Identity Text
-
-data PrimitiveBlockType = PBVerbatim | PBOrdinary | PBParagraph deriving (Show, Eq)
-
 data Line =
     Line { indent :: Int, prefix :: Text, content :: Text, lineNumber :: Int, position :: Int }
+
+type LineParser = Parsec Data.Void.Void Text
+
+data PrimitiveBlockType = PBVerbatim | PBOrdinary | PBParagraph deriving (Show, Eq)
 
 
 classify :: Int -> Int -> Text -> Line
@@ -122,20 +122,27 @@ head_ [] = Nothing
 head_ (first:rest) = Just first
 
 
-{-
-lineParser : Int -> Int -> Parser Line
-lineParser position lineNumber =
-    Parser.succeed (\prefixStart prefixEnd lineEnd content
-    -> {   indent = prefixEnd - prefixStart
-         , prefix = String.slice 0 prefixEnd content
-         , content = String.slice prefixEnd lineEnd content
-         , position = position
-         , lineNumber = lineNumber }
-       )
-        |= Parser.getOffset
-        |. Parser.chompWhile (\c -> c == ' ')
-        |= Parser.getOffset
-        |. Parser.chompWhile (\c -> c /= '\n')
-        |= Parser.getOffset
-        |= Parser.getSource
--}
+
+
+
+-- data Error i e
+--   = EndOfInput  -- Expected more input, but there is nothing
+--   | Unexpected i  -- We didn't expect to find this element
+--   | CustomError e  -- Extra errors the user may want to create
+--   | Empty  -- Used in `Alternative` implementation of `empty`
+--   deriving (Eq, Show)
+
+
+-- lineParser :: Int -> Int -> LineParser Line
+-- lineParser position lineNumber = 
+--   do 
+--     prefix <- many (satisfy (\c -> c == ' ')) 
+--     content <- many (satisfy (\c -> c /= '\n')) 
+--     rawContent <- getInput
+--     return Line {indent =  length prefix, prefix = prefix, position = position, lineNumber = lineNumber, content = content}
+
+-- slice :: Int -> Int -> [a] -> [a]
+-- slice from to xs = Prelude.take (to - from + 1) (Prelude.drop from xs)
+
+
+-- parseLine position lineNumber str = parseTest (lineParser position lineNumber) (pack str)

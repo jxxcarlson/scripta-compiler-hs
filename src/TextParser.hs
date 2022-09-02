@@ -1,5 +1,8 @@
 
-module TextParser (test, lineParser, textParser) where
+
+{-# LANGUAGE OverloadedStrings, DuplicateRecordFields #-}
+
+module TextParser (parseLine,lineParser, Line1) where
 
 import Text.Megaparsec
 import Text.Megaparsec.Char
@@ -9,9 +12,12 @@ import Flow ((|>))
 import Data.Text.Lazy as Text ( pack, Text, take, strip, words, drop )
 import System.Environment
 
--- type Parser s = ParsecT Data.Void.Void s Identity Text
 
-type Parser = Parsec Data.Void.Void String
+type Parser = Parsec Data.Void.Void Text
+
+data Line1 =
+    Line1 { indent :: Int, prefix :: Text, content :: Text, lineNumber :: Int, position :: Int } deriving(Show)
+
 
 data Error i e
   = EndOfInput  -- Expected more input, but there is nothing
@@ -21,55 +27,16 @@ data Error i e
   deriving (Eq, Show)
 
 
--- singleLetterP :: Parser Char
--- singleLetterP = char 'h'
+lineParser :: Int -> Int -> Parser Line1
+lineParser position lineNumber = 
+  do 
+    prefix <- many (satisfy (\c -> c == ' ')) 
+    content <- many (satisfy (\c -> c /= '\n')) 
+    rawContent <- getInput
+    return Line1 {indent =  length prefix, prefix = pack prefix, position = position, lineNumber = lineNumber, content = pack content}
 
--- bool :: Parser Bool
--- bool = False <$ string "false" <|> True <$ string "true"
-
-
-
--- ptest str = parseTest bool str
-
---lineParser :: Int -> Int -> Parser Line
--- lineParser position lineNumber =
---     -- Parser.succeed (\prefixStart prefixEnd lineEnd content
---     -- -> {   indent = prefixEnd - prefixStart
---     --      , prefix = String.slice 0 prefixEnd content
---     --      , content = String.slice prefixEnd lineEnd content
---     --      , position = position
---     --      , lineNumber = lineNumber }
---     --    )
---       do 
---         a <- getOffset
---          some (\c -> c == ' ')
---         <*> getOffset
---         <*> some (\c -> c /= '\n')
---         <*>  getOffset
---         <*>  getInput
-
-lineParser_ :: Parser String
-lineParser_ = 
-  many (satisfy (\c -> c /= '\n'))
-
-eolP :: Parser Char
-eolP = satisfy (\c -> c == '\n') 
+slice :: Int -> Int -> [a] -> [a]
+slice from to xs = Prelude.take (to - from + 1) (Prelude.drop from xs)
 
 
-lineParser2 :: Parser Char
-lineParser2 = lineParser >>= (\s -> eolP)
-
-first :: Parser a -> Parser b -> Parser a
-first pa pb = do
-    a <- pa
-    b <- pb
-    return a
-
-lineParser = first lineParser_ eolP
-
-textParser = many lineParser
-
-
--- *TextParser> test "abc\ndef\nghi\n"
--- ["abc","def","ghi"]
-test str = parseTest textParser str
+parseLine position lineNumber str = parseTest (lineParser position lineNumber) (pack str)

@@ -3,7 +3,7 @@ module Main (main) where
 -- https://stackoverflow.com/questions/11492976/creating-an-interactive-program-in-haskell
 
 import System.Environment
-import TextParser (test)
+import TextParser(parseLine)
 import Prelude
 -- mport Lib
 
@@ -30,7 +30,7 @@ parserLoop =
         hFlush stdout
         xx <- getLine
         putStr "  -- "
-        test (xx ++ "\n")
+        parseLine 4 7  (xx ++ "\n")
 
 
 testLoop = 
