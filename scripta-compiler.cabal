@@ -28,7 +28,6 @@ library
       Language
       Line
       PrimitiveBlock
-      StringParser
       TestData
   other-modules:
       Paths_scripta_compiler
