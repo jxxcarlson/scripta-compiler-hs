@@ -5,9 +5,12 @@
 -- https://cpufun.substack.com/p/setting-up-the-apple-m1-for-native
 -- https://www.reddit.com/r/haskell/comments/tqzxy1/now_that_stackage_supports_ghc_92_is_it_easy_to/
 
-module PrimitiveBlock (PrimitiveBlock, empty, parse) where
+module PrimitiveBlock (PrimitiveBlock, PrimitiveBlock.content, empty, parse, joinStrings) where
 
-import Data.Text.Lazy as Text (Text, concat, intercalate, length, fromChunks, strip)
+import Data.Char
+import qualified Data.Text as Text
+-- import Data.Text.Lazy as Text (Text, concat, intercalate, length, fromChunks, strip)
+import Data.Text as Text (Text, concat, intercalate, length, strip)
 import Line (PrimitiveBlockType(..),Line,indent, isEmpty, getNameAndArgs, prefix, content, lineNumber, position, classify, getBlockType) 
 import Prelude
 import Language (Language(..)) 
@@ -24,7 +27,22 @@ data PrimitiveBlock = PrimitiveBlock
     , named :: Bool
     , blockType  :: PrimitiveBlockType
     , sourceText :: Text
-    } deriving (Show, Eq)
+    } deriving (Eq)
+
+
+instance Show PrimitiveBlock where
+    show block =
+         showContent block
+
+
+showContent :: PrimitiveBlock -> String
+showContent block = 
+    (PrimitiveBlock.content block) |> map show |> joinStrings "\n"
+
+joinStrings :: String -> [String] -> String
+joinStrings separator [] = ""
+joinStrings separator [x] = x
+joinStrings separator (x:xs) = x ++ separator ++ (joinStrings separator xs) 
 
 
 empty :: PrimitiveBlock

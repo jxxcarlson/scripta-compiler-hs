@@ -5,30 +5,27 @@ module Main (main) where
 import System.Environment
 import TextParser(parseLine)
 import Prelude
--- mport Lib
+import Flow ((|>))
 
 import Control.Monad  
 import Data.Char
--- import qualified Data.Text as T
+import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import System.IO
 import PrimitiveBlock
 import Language(Language(..))
-import Data.Text.Lazy  (Text, lines, concat, intercalate, length, fromChunks, strip)
+-- import Data.Text.Lazy  (Text, lines, concat, intercalate, length, fromChunks, strip)
 
-hello :: String -> String
-hello name = "Hello" ++ " " ++ name ++ "!"
-
-upperCase :: String -> String
-upperCase = map toUpper
 
 main :: IO ()
 main = 
  do
    [fname] <- getArgs
    text <- TIO.readFile fname
-   let blocks = PrimitiveBlock.parse L0Lang (\_ -> True) (Data.Text.Lazy.lines text )
-   putStrLn "I did it!"
+   let blocks = PrimitiveBlock.parse L0Lang (\_ -> True) (T.lines text )
+   let output = map show blocks |> joinStrings "\n\n"
+   putStrLn "Hi there!\nWhat's up"
+   putStrLn (show output)
             
 
 -- parserLoop = 

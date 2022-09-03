@@ -6,7 +6,9 @@ module Line(PrimitiveBlockType(..), Line, getNameAndArgs, isEmpty, indent, prefi
 -- https://serokell.io/blog/parser-combinators-in-haskell
 -- https://akashagrawal.me/2017/01/19/beginners-guide-to-megaparsec.html
 
-import Data.Text.Lazy as Text ( pack, unpack, Text, take, strip, words, drop )
+--import Data.Text.Lazy as Text ( pack, unpack, Text, take, strip, words, drop )
+import Data.Text as Text (Text, take, words, pack, drop, concat, intercalate, length, strip)
+
 import Data.Functor.Identity (Identity)
 import Data.Maybe(maybe)
 import Text.Megaparsec
@@ -138,7 +140,7 @@ lineParser position lineNumber =
     prefix <- many (satisfy (\c -> c == ' ')) 
     content <- many (satisfy (\c -> c /= '\n')) 
     rawContent <- getInput
-    return Line {indent =  length prefix, prefix = pack prefix, position = position, lineNumber = lineNumber, content = pack content}
+    return Line {indent =  Prelude.length prefix, prefix = pack prefix, position = position, lineNumber = lineNumber, content = pack content}
 
 slice :: Int -> Int -> [a] -> [a]
 slice from to xs = Prelude.take (to - from + 1) (Prelude.drop from xs)
