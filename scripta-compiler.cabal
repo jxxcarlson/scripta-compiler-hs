@@ -26,13 +26,10 @@ source-repository head
 library
   exposed-modules:
       Language
-      Lib
       Line
       PrimitiveBlock
       StringParser
       TestData
-      TextParser
-      XParser
   other-modules:
       Paths_scripta_compiler
   hs-source-dirs:
