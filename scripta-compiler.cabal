@@ -28,7 +28,6 @@ library
       Language
       Lib
       Line
-      MyParser
       PrimitiveBlock
       StringParser
       TestData
