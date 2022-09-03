@@ -5,12 +5,12 @@
 -- https://cpufun.substack.com/p/setting-up-the-apple-m1-for-native
 -- https://www.reddit.com/r/haskell/comments/tqzxy1/now_that_stackage_supports_ghc_92_is_it_easy_to/
 
-module PrimitiveBlock (PrimitiveBlock, PrimitiveBlock.content, empty, parse, joinStrings) where
+module PrimitiveBlock (PrimitiveBlock, PrimitiveBlock.content, empty, parse, joinStrings, displayBlocks) where
 
 import Data.Char
 import qualified Data.Text as Text
 -- import Data.Text.Lazy as Text (Text, concat, intercalate, length, fromChunks, strip)
-import Data.Text as Text (Text, concat, intercalate, length, strip)
+import Data.Text as Text (Text, concat, unlines, intercalate, length, strip)
 import Line (PrimitiveBlockType(..),Line,indent, isEmpty, getNameAndArgs, prefix, content, lineNumber, position, classify, getBlockType) 
 import Prelude
 import Language (Language(..)) 
@@ -30,9 +30,32 @@ data PrimitiveBlock = PrimitiveBlock
     } deriving (Eq)
 
 
-instance Show PrimitiveBlock where
-    show block =
-         showContent block
+
+displayName :: PrimitiveBlock -> Text
+displayName block = 
+    case name block of 
+        Nothing -> "name: anon"
+        Just txt -> ["name: ",  txt] |> Text.unwords
+
+displayBlock :: PrimitiveBlock -> Text
+displayBlock block = 
+    Text.unlines $ displayBlockType block : displayName block : displayArgs block : "------" : (PrimitiveBlock.content $ block  ) 
+
+displayBlockType :: PrimitiveBlock -> Text
+displayBlockType block = 
+    case blockType block of 
+        PBVerbatim -> "type: Verbatim"
+        PBOrdinary -> "type: Ordinary"
+        PBParagraph -> "type: Paragraph"
+
+displayArgs :: PrimitiveBlock -> Text
+displayArgs block = 
+    ("args: " : args block) |> Text.unwords   
+
+
+displayBlocks :: [PrimitiveBlock] -> Text
+displayBlocks blocks = 
+   (map displayBlock blocks) |> Text.unlines
 
 
 showContent :: PrimitiveBlock -> String

@@ -23,9 +23,9 @@ main =
    [fname] <- getArgs
    text <- TIO.readFile fname
    let blocks = PrimitiveBlock.parse L0Lang (\_ -> True) (T.lines text )
-   let output = map show blocks |> joinStrings "\n\n"
-   putStrLn "Hi there!\nWhat's up"
-   putStrLn (show output)
+   putStrLn "\nPrimitive blocks:\n---"
+   TIO.putStrLn $ displayBlocks blocks
+   putStrLn "----"
             
 
 -- parserLoop = 
