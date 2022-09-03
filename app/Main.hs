@@ -22,10 +22,10 @@ main =
  do
    [fname] <- getArgs
    text <- TIO.readFile fname
-   let blocks = PrimitiveBlock.parse L0Lang (\_ -> True) (T.lines text )
-   putStrLn "\nPrimitive blocks:\n---"
+   let blocks = PrimitiveBlock.parse L0Lang (\_ -> True) (T.lines text )  |> filter (\b -> PrimitiveBlock.content b /= [T.pack ""])
+   putStrLn "\nPrimitive blocks:\n================="
    TIO.putStrLn $ displayBlocks blocks
-   putStrLn "----"
+   putStrLn "================="
             
 
 -- parserLoop = 
