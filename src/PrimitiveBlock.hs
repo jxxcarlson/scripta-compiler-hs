@@ -5,13 +5,12 @@
 -- https://cpufun.substack.com/p/setting-up-the-apple-m1-for-native
 -- https://www.reddit.com/r/haskell/comments/tqzxy1/now_that_stackage_supports_ghc_92_is_it_easy_to/
 
-module PrimitiveBlock (PrimitiveBlock, PrimitiveBlock.content, empty, parse, joinStrings, displayBlocks) where
+module PrimitiveBlock (PrimitiveBlock, content, empty, parse, displayBlocks) where
 
-import Data.Char
 import qualified Data.Text as Text
--- import Data.Text.Lazy as Text (Text, concat, intercalate, length, fromChunks, strip)
-import Data.Text as Text (Text, concat, unlines, intercalate, length, strip)
-import Line (PrimitiveBlockType(..),Line,indent, isEmpty, getNameAndArgs, prefix, content, lineNumber, position, classify, getBlockType) 
+import Data.Text (Text)
+import qualified Line
+import Line (PrimitiveBlockType(..),Line) 
 import Prelude
 import Language (Language(..)) 
 import Flow ((|>))
@@ -28,44 +27,6 @@ data PrimitiveBlock = PrimitiveBlock
     , blockType  :: PrimitiveBlockType
     , sourceText :: Text
     } deriving (Eq)
-
-
-
-displayName :: PrimitiveBlock -> Text
-displayName block = 
-    case name block of 
-        Nothing -> "name: anon"
-        Just txt -> ["name: ",  txt] |> Text.unwords
-
-displayBlock :: PrimitiveBlock -> Text
-displayBlock block = 
-    Text.unlines $ displayBlockType block : displayName block : displayArgs block : "------" : (PrimitiveBlock.content $ block  ) 
-
-displayBlockType :: PrimitiveBlock -> Text
-displayBlockType block = 
-    case blockType block of 
-        PBVerbatim -> "type: Verbatim"
-        PBOrdinary -> "type: Ordinary"
-        PBParagraph -> "type: Paragraph"
-
-displayArgs :: PrimitiveBlock -> Text
-displayArgs block = 
-    ("args: " : args block) |> Text.unwords   
-
-
-displayBlocks :: [PrimitiveBlock] -> Text
-displayBlocks blocks = 
-   (map displayBlock blocks) |> Text.unlines
-
-
-showContent :: PrimitiveBlock -> String
-showContent block = 
-    (PrimitiveBlock.content block) |> map show |> joinStrings "\n"
-
-joinStrings :: String -> [String] -> String
-joinStrings separator [] = ""
-joinStrings separator [x] = x
-joinStrings separator (x:xs) = x ++ separator ++ (joinStrings separator xs) 
 
 
 empty :: PrimitiveBlock
@@ -103,8 +64,6 @@ xlog msg a = Debug.Trace.trace (msg <> ": " <> show a) a
 
 instance Show State where
   show state = 
-    -- do your string formatting here, possibly calling `show` on fields
-    -- show (((count state), fmap PrimitiveBlock.content (currentBlock state), map PrimitiveBlock.content $ blocks state) )
     show (((label state), map PrimitiveBlock.content $ blocks state) )
 
 init :: Language -> (Text -> Bool) ->  [Text] -> State
@@ -137,15 +96,15 @@ parse :: Language -> (Text -> Bool) ->  [Text] ->  [PrimitiveBlock]
 parse lang isVerbatimLine lines_ =
     case lang of
         L0Lang ->
-            lines_ |> parse2 lang isVerbatimLine 
+            lines_ |> parse_ lang isVerbatimLine 
 
         MicroLaTeXLang ->
             --lines_ |> MicroLaTeX.Parser.TransformLaTeX.toL0 |> parse_ lang isVerbatimLine
-            lines_ |> parse2 lang isVerbatimLine
+            lines_ |> parse_ lang isVerbatimLine
 
         
-parse2 :: Language -> (Text -> Bool) ->  [Text] -> [PrimitiveBlock]
-parse2 lang isVerbatimLine lines2 =
+parse_ :: Language -> (Text -> Bool) ->  [Text] -> [PrimitiveBlock]
+parse_ lang isVerbatimLine lines2 =
     loop (PrimitiveBlock.init lang isVerbatimLine lines2) nextStep
         |> map (\block -> finalize block)
 
@@ -389,3 +348,33 @@ commitBlock state currentLine =
                 , inVerbatim = (isVerbatimLine state) (Line.content currentLine)
                 , currentBlock = currentBlock
             }
+
+
+-- DISPLAY PRIMITIVEBLOXK
+
+displayName :: PrimitiveBlock -> Text
+displayName block = 
+    case name block of 
+        Nothing -> "name: anon"
+        Just txt -> ["name: ",  txt] |> Text.unwords
+
+displayBlock :: PrimitiveBlock -> Text
+displayBlock block = 
+    Text.unlines $ displayBlockType block : displayName block : displayArgs block : "------" : (PrimitiveBlock.content $ block  ) 
+
+displayBlockType :: PrimitiveBlock -> Text
+displayBlockType block = 
+    case blockType block of 
+        PBVerbatim -> "type: Verbatim"
+        PBOrdinary -> "type: Ordinary"
+        PBParagraph -> "type: Paragraph"
+
+displayArgs :: PrimitiveBlock -> Text
+displayArgs block = 
+    ("args: " : args block) |> Text.unwords   
+
+
+displayBlocks :: [PrimitiveBlock] -> Text
+displayBlocks blocks_ = 
+   (map displayBlock blocks_) |> Text.unlines
+
