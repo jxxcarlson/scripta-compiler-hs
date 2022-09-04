@@ -1,4 +1,4 @@
-| section 1
+| section 1 foo:bar yada:a b c
 Introduction
 
 abc

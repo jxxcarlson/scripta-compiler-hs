@@ -5,7 +5,8 @@
 -- https://cpufun.substack.com/p/setting-up-the-apple-m1-for-native
 -- https://www.reddit.com/r/haskell/comments/tqzxy1/now_that_stackage_supports_ghc_92_is_it_easy_to/
 
-module PrimitiveBlock (PrimitiveBlock, prepareKVData, content, empty, parse, displayBlocks) where
+module PrimitiveBlock (PrimitiveBlock, content, empty, parse, displayBlocks) where
+
 
 import qualified Data.Text as Text
 import Data.Text (Text)
@@ -24,6 +25,7 @@ data PrimitiveBlock = PrimitiveBlock
     , lineNumber :: Int
     , position  :: Int
     , args :: [Text]
+    , dict :: Map Text [Text]
     , content  :: [Text]
     , name  :: Maybe Text
     , blockType  :: PrimitiveBlockType
@@ -40,6 +42,7 @@ empty =
     , content = []
     , name = Nothing
     , args = []
+    , dict = Map.fromList []
     , sourceText = ""
     , blockType = PBParagraph
     }
@@ -313,12 +316,13 @@ commitBlock state currentLine =
 
         Just block ->
             let
+                dict = args block |> prepareList |> prepareKVData
                 ( currentBlock, newBlocks ) =
                     if PrimitiveBlock.content block == [ "" ] then
                         ( Nothing, blocks state )
 
                     else
-                        ( Just (blockFromLine (lang state) currentLine), block : blocks state )
+                        ( Just (blockFromLine (lang state) currentLine), block{dict = dict} : blocks state )
             in
             state{ 
                  lines_ = Prelude.drop 1 (lines_ state)
@@ -343,11 +347,12 @@ data KVState = KVState { input :: [Text], kvList :: [(Text, [Text])], currentKey
 
     ghci> dd = ["a:", "1", "2", "3", "b:", "XYX", "c:", "U", "V"] |> map Text.pack
     ghci> dict = prepareKVData dd
-    ghci> Map.lookup "c" dict
+    ghci> Map.lookup (Text.pack "c") dict
     Just ["U","V"]
 
 -}
-prepareKVData :: [Text] -> Map Text [Text]
+
+
 prepareKVData data_ =
     let 
         initialState = KVState {input = data_, kvList = [], currentKey = Nothing, currentValue = [], kvStatus = KVInKey}
@@ -402,7 +407,16 @@ nextKVStep state =
                               , currentValue = item : (currentValue state)
                               } 
 
+explode :: [Text] -> [[Text]]
+explode txt = map (Text.split (== ':')) txt
 
+prepareList :: [Text] -> [Text]
+prepareList ts = 
+    ts |> explode |> map fix |> concat
+
+fix :: [Text] -> [Text]
+fix (a:rest:[]) = (a <> ":"):rest:[]
+fix (a:[]) = a:[]
 
 
 dropLast :: Text -> Text 
@@ -419,9 +433,23 @@ displayName block =
         Nothing -> "name: anon"
         Just txt -> ["name:",  txt] |> Text.unwords
 
+displayDict :: PrimitiveBlock -> Text 
+displayDict block = 
+    ["dict: ", (dict block) |> Map.toList  |> map yazzle |> Text.unwords] |> Text.unwords
+    
+
+yazzle :: (Text, [Text])  -> Text
+yazzle (txt, txtList) =
+    [txt, ": ", Text.unwords txtList] |> Text.unwords
+
+-- |> map (\(k,v) -> [k, ":", Text.unwords k])
+   
+-- ff =  (map (\(k,v) -> [k, ":", unwords k])) 
+
+
 displayBlock :: PrimitiveBlock -> Text
 displayBlock block = 
-    Text.unlines $ displayBlockType block : displayName block : displayArgs block : "------" : (PrimitiveBlock.content $ block  ) 
+    Text.unlines $ displayBlockType block : displayName block : displayArgs block : displayDict block : "------" : (PrimitiveBlock.content $ block  ) 
 
 displayBlockType :: PrimitiveBlock -> Text
 displayBlockType block = 
