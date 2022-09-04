@@ -5,7 +5,7 @@
 -- https://cpufun.substack.com/p/setting-up-the-apple-m1-for-native
 -- https://www.reddit.com/r/haskell/comments/tqzxy1/now_that_stackage_supports_ghc_92_is_it_easy_to/
 
-module PrimitiveBlock (PrimitiveBlock, content, empty, parse, displayBlocks) where
+module PrimitiveBlock (PrimitiveBlock, content, cleanArgs, empty, parse, displayBlocks) where
 
 
 import qualified Data.Text as Text
@@ -259,7 +259,7 @@ blockFromLine lang line =
 elaborate :: Line -> PrimitiveBlock -> PrimitiveBlock
 elaborate line pb =
     let
-        ( name, args ) =
+        ( name, args_ ) =
             Line.getNameAndArgs line
 
         content = 
@@ -269,7 +269,7 @@ elaborate line pb =
                 PBVerbatim -> PrimitiveBlock.content pb |> drop 1 |> map Text.strip
 
     in
-    pb{ content = content, name = name, args = args }
+    pb{ content = content, name = name, args = cleanArgs args_, dict = args_ |> prepareList |> prepareKVData }
 
 
 addCurrentLine :: State -> Line -> State
@@ -316,13 +316,12 @@ commitBlock state currentLine =
 
         Just block ->
             let
-                dict = args block |> prepareList |> prepareKVData
                 ( currentBlock, newBlocks ) =
                     if PrimitiveBlock.content block == [ "" ] then
                         ( Nothing, blocks state )
 
                     else
-                        ( Just (blockFromLine (lang state) currentLine), block{dict = dict} : blocks state )
+                        ( Just (blockFromLine (lang state) currentLine), block : blocks state )
             in
             state{ 
                  lines_ = Prelude.drop 1 (lines_ state)
@@ -351,6 +350,18 @@ data KVState = KVState { input :: [Text], kvList :: [(Text, [Text])], currentKey
     Just ["U","V"]
 
 -}
+
+cleanArgs :: [Text] -> [Text]
+cleanArgs ts =
+    case Data.List.findIndex (\t -> findChar ':' t) ts of
+        Nothing -> ts
+        Just k -> Prelude.take k ts
+
+findChar :: Char -> Text -> Bool
+findChar c txt = 
+    case Text.find (\c' -> c' == c) txt of 
+        Nothing -> False
+        Just _ -> True
 
 
 prepareKVData data_ =
