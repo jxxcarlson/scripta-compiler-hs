@@ -164,7 +164,7 @@ nextStep state =
 
                 -- A nonempty line was encountered inside a block, so add it
                 ( True, False, _ ) ->
-                    Loop (addCurrentLine2 state{label = "4, ADD" } currentLine)
+                    Loop (addCurrentLine state{label = "4, ADD" } currentLine)
 
                 -- commit the current block: we are in a block and the
                 -- current line is empty
@@ -239,7 +239,6 @@ createBlock state currentLine =
     } 
 
 blockFromLine :: Language -> Line -> PrimitiveBlock
--- blockFromLine lang ({ indent, lineNumber, position, prefix, content } as line) =
 blockFromLine lang line =
    PrimitiveBlock { indent = Line.indent line
     , lineNumber = Line.lineNumber line
@@ -254,8 +253,8 @@ blockFromLine lang line =
         |> elaborate line 
 
 
-elaborate :: Line -> PrimitiveBlock -> PrimitiveBlock
-elaborate line pb =
+elaborate1 :: Line -> PrimitiveBlock -> PrimitiveBlock
+elaborate1 line pb =
     if named pb then
         pb
 
@@ -279,8 +278,24 @@ elaborate line pb =
             pb{ content = content, name = name, args = args, named = True }
 
 
-addCurrentLine2 :: State -> Line -> State
-addCurrentLine2 state currentLine =
+elaborate :: Line -> PrimitiveBlock -> PrimitiveBlock
+elaborate line pb =
+    let
+        ( name, args ) =
+            Line.getNameAndArgs line
+
+        content = 
+            case blockType pb  of
+                PBParagraph -> PrimitiveBlock.content pb
+                PBOrdinary -> PrimitiveBlock.content pb 
+                PBVerbatim -> PrimitiveBlock.content pb |> map Text.strip
+
+    in
+    pb{ content = content, name = name, args = args, named = True }
+
+
+addCurrentLine :: State -> Line -> State
+addCurrentLine state currentLine =
     case currentBlock state of
         Nothing ->
             state{ lines_ = Prelude.drop 1 (lines_ state) } 
@@ -291,16 +306,8 @@ addCurrentLine2 state currentLine =
                 , cursor = (cursor state)+ (Text.length (Line.content currentLine) |> fromIntegral)
                 , count = (count state) + 1
                 , currentBlock =
-                    Just (addCurrentLine currentLine block)
-            }
-
-addCurrentLine :: Line -> PrimitiveBlock -> PrimitiveBlock
-addCurrentLine line block =
-    let
-        pb =
-            addCurrentLine_ line block 
-    in
-    elaborate line pb            
+                    Just (addCurrentLine_ currentLine block)
+            }          
 
 
 addCurrentLine_ :: Line -> PrimitiveBlock -> PrimitiveBlock
