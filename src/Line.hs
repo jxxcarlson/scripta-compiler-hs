@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings,  DuplicateRecordFields #-}
 
 module Line(PrimitiveBlockType(..), Line, getNameAndArgs, isEmpty, indent, prefix,content, lineNumber, position, classify, getBlockType) where
 
@@ -7,15 +7,12 @@ module Line(PrimitiveBlockType(..), Line, getNameAndArgs, isEmpty, indent, prefi
 -- https://akashagrawal.me/2017/01/19/beginners-guide-to-megaparsec.html
 
 --import Data.Text.Lazy as Text ( pack, unpack, Text, take, strip, words, drop )
-import Data.Text as Text (Text, take, words, pack, drop, concat, intercalate, length, strip)
-
-import Data.Functor.Identity (Identity)
-import Data.Maybe(maybe)
+import qualified Data.Text as Text 
+import Data.Text (Text) -- , take, words, pack, drop, concat, intercalate, length, strip)
+import Data.Maybe ()
 import Text.Megaparsec
-import Text.Megaparsec.Char
-import Data.Functor.Identity (Identity)
-import Data.Void (Void)
-import Flow ((|>))
+import Data.Void
+
 
 
 import Language (Language(..)) 
@@ -29,8 +26,8 @@ data PrimitiveBlockType = PBVerbatim | PBOrdinary | PBParagraph deriving (Show, 
 
 
 classify :: Int -> Int -> Text -> Line
-classify position lineNumber txt =
-     case parseMaybe (lineParser position lineNumber) txt of 
+classify position_ lineNumber_ txt =
+     case parseMaybe (lineParser position_ lineNumber_) txt of 
         Nothing -> Line {indent = 0, prefix = "", content = "", lineNumber = 0, position = 0}
         Just l -> l
 
@@ -90,27 +87,27 @@ getNameAndArgs line =
     in
     if Text.take 2 normalizedLine == "||" then
         let
-            words =
+            words_ =
                 Text.words (Text.drop 3 normalizedLine)
 
             name =
-                 head_ words
+                 head_ words_
 
             args =
-                Prelude.drop 1 words
+                Prelude.drop 1 words_
         in
         (  name, args )
 
     else if Text.take 1 normalizedLine == "|" then
         let
-            words =
+            words_ =
                 Text.words (Text.drop 2 normalizedLine)
 
             name =
-                head_ words 
+                head_ words_ 
 
             args =
-                Prelude.drop 1 words
+                Prelude.drop 1 words_
         in
         ( name, args )
 
@@ -123,7 +120,7 @@ getNameAndArgs line =
 
 head_ :: [a] -> Maybe a 
 head_ [] = Nothing 
-head_ (first:rest) = Just first
+head_ (first:_) = Just first
 
 
 data Error i e
@@ -135,15 +132,11 @@ data Error i e
 
 
 lineParser :: Int -> Int -> LineParser Line
-lineParser position lineNumber = 
+lineParser position_ lineNumber_ = 
   do 
-    prefix <- many (satisfy (\c -> c == ' ')) 
-    content <- many (satisfy (\c -> c /= '\n')) 
-    rawContent <- getInput
-    return Line {indent =  Prelude.length prefix, prefix = pack prefix, position = position, lineNumber = lineNumber, content = pack content}
+    prefix_ <- many (satisfy (\c -> c == ' ')) 
+    content_ <- many (satisfy (\c -> c /= '\n')) 
+    return Line {indent =  Prelude.length prefix_, prefix = Text.pack prefix_, position = position_, lineNumber = lineNumber_, content = Text.pack content_}
 
-slice :: Int -> Int -> [a] -> [a]
-slice from to xs = Prelude.take (to - from + 1) (Prelude.drop from xs)
-
-
-parseLine position lineNumber str = parseTest (lineParser position lineNumber) (pack str)
+-- slice :: Int -> Int -> [a] -> [a]
+-- slice from to xs = Prelude.take (to - from + 1) (Prelude.drop from xs)

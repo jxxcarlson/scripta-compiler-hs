@@ -5,10 +5,13 @@
 -- https://cpufun.substack.com/p/setting-up-the-apple-m1-for-native
 -- https://www.reddit.com/r/haskell/comments/tqzxy1/now_that_stackage_supports_ghc_92_is_it_easy_to/
 
-module PrimitiveBlock (PrimitiveBlock, content, empty, parse, displayBlocks) where
+module PrimitiveBlock (PrimitiveBlock, prepareKVData, content, empty, parse, displayBlocks) where
 
 import qualified Data.Text as Text
 import Data.Text (Text)
+import Data.Map (Map)
+import qualified Data.List
+import qualified Data.Map as Map
 import qualified Line
 import Line (PrimitiveBlockType(..),Line) 
 import Prelude
@@ -65,17 +68,17 @@ instance Show State where
     show (((label state), map PrimitiveBlock.content $ blocks state) )
 
 init :: Language -> (Text -> Bool) ->  [Text] -> State
-init lang isVerbatimLine lines =
+init lang_ isVerbatimLine_ lines_ =
    State{ blocks = []
     , currentBlock = Nothing
-    , lang = lang
-    , lines_ = lines
+    , lang = lang_
+    , lines_ = lines_
     , indent = 0
     , currentLineNumber = 0
     , cursor = 0
     , inBlock = False
     , inVerbatim = False
-    , isVerbatimLine = isVerbatimLine
+    , isVerbatimLine = isVerbatimLine_
     , count = 0
     , label = "0, START"
     }
@@ -91,14 +94,14 @@ language and a function for determining when a string is the first line
 of a verbatim block
 -}
 parse :: Language -> (Text -> Bool) ->  [Text] ->  [PrimitiveBlock]
-parse lang isVerbatimLine lines_ =
-    case lang of
+parse lang_ isVerbatimLine lines_ =
+    case lang_ of
         L0Lang ->
-            lines_ |> parse_ lang isVerbatimLine 
+            lines_ |> parse_ lang_ isVerbatimLine 
 
         MicroLaTeXLang ->
             --lines_ |> MicroLaTeX.Parser.TransformLaTeX.toL0 |> parse_ lang isVerbatimLine
-            lines_ |> parse_ lang isVerbatimLine
+            lines_ |> parse_ lang_ isVerbatimLine
 
         
 parse_ :: Language -> (Text -> Bool) ->  [Text] -> [PrimitiveBlock]
@@ -328,6 +331,85 @@ commitBlock state currentLine =
                 , currentBlock = currentBlock
             }
 
+
+-- KEY-VALUE DICTIONARY
+
+ 
+
+data KVState = KVState { input :: [Text], kvList :: [(Text, [Text])], currentKey :: Maybe Text, currentValue :: [Text], kvStatus :: KVStatus}
+
+
+{-
+
+    ghci> dd = ["a:", "1", "2", "3", "b:", "XYX", "c:", "U", "V"] |> map Text.pack
+    ghci> dict = prepareKVData dd
+    ghci> Map.lookup "c" dict
+    Just ["U","V"]
+
+-}
+prepareKVData :: [Text] -> Map Text [Text]
+prepareKVData data_ =
+    let 
+        initialState = KVState {input = data_, kvList = [], currentKey = Nothing, currentValue = [], kvStatus = KVInKey}
+    in
+    loop initialState nextKVStep
+
+
+nextKVStep ::  KVState -> Step (KVState) (Map Text [Text])
+nextKVStep state = 
+    case  Data.List.uncons $ (input state) of 
+        Nothing -> 
+            let
+              kvList' =
+                case (currentKey state) of 
+                    Nothing -> (kvList state)
+                    Just key -> (key, (currentValue state)): (kvList state) 
+                        |> map (\(k, v) -> (k, Data.List.reverse v))
+            in
+            Done (Map.fromList kvList')
+        Just (item, rest) ->
+            case kvStatus state of
+                KVInKey -> 
+                    if Text.last item == ':' then
+                        case currentKey state of
+                            Nothing -> 
+                              Loop state {input = rest, currentKey = Just (dropLast item), kvStatus = KVInValue }
+                            Just key ->
+                              Loop state {  input = rest
+                                     , currentKey = Just (dropLast item)
+                                     , kvStatus = KVInValue 
+                                     , kvList = (key, currentValue state) : (kvList state)
+                                     , currentValue = []
+                                     }
+                    else 
+                        Loop state {input = rest}
+                KVInValue -> if Text.last item == ':' then
+                        case currentKey state of
+                            Nothing -> 
+                              Loop state {  input = rest
+                                          , currentKey = Just (dropLast item)
+                                          , currentValue = []
+                                          , kvStatus = KVInValue }
+                            Just key ->
+                              Loop state {  input = rest
+                                     , currentKey = Just (dropLast item)
+                                     , kvStatus = KVInValue 
+                                     , kvList = (key, currentValue state) : (kvList state)
+                                     , currentValue = []
+                                     }
+                    else 
+                       Loop state { input = rest
+                              , currentValue = item : (currentValue state)
+                              } 
+
+
+
+
+dropLast :: Text -> Text 
+dropLast txt = 
+  (Text.take ((Text.length txt) - 1)) txt
+
+data KVStatus = KVInKey | KVInValue
 
 -- DISPLAY PRIMITIVEBLOXK
 
