@@ -253,29 +253,29 @@ blockFromLine lang line =
         |> elaborate line 
 
 
-elaborate1 :: Line -> PrimitiveBlock -> PrimitiveBlock
-elaborate1 line pb =
-    if named pb then
-        pb
+-- elaborate1 :: Line -> PrimitiveBlock -> PrimitiveBlock
+-- elaborate1 line pb =
+--     if named pb then
+--         pb
 
-    else 
-        if (PrimitiveBlock.content pb) == [ "" ] then
-        pb
+--     else 
+--         if (PrimitiveBlock.content pb) == [ "" ] then
+--         pb
 
-        else
-            let
-                ( name, args ) =
-                    -- TODO: note this change: it needs to be verified
-                    Line.getNameAndArgs line
+--         else
+--             let
+--                 ( name, args ) =
+--                     -- TODO: note this change: it needs to be verified
+--                     Line.getNameAndArgs line
 
-                content =
-                    if (blockType pb) == PBVerbatim then
+--                 content =
+--                     if (blockType pb) == PBVerbatim then
 
-                        map Text.strip (PrimitiveBlock.content pb)
+--                         map Text.strip (PrimitiveBlock.content pb)
 
-                    else (PrimitiveBlock.content pb)
-            in
-            pb{ content = content, name = name, args = args, named = True }
+--                     else (PrimitiveBlock.content pb)
+--             in
+--             pb{ content = content, name = name, args = args, named = True }
 
 
 elaborate :: Line -> PrimitiveBlock -> PrimitiveBlock
@@ -287,8 +287,8 @@ elaborate line pb =
         content = 
             case blockType pb  of
                 PBParagraph -> PrimitiveBlock.content pb
-                PBOrdinary -> PrimitiveBlock.content pb 
-                PBVerbatim -> PrimitiveBlock.content pb |> map Text.strip
+                PBOrdinary -> PrimitiveBlock.content pb |> drop 1
+                PBVerbatim -> PrimitiveBlock.content pb |> drop 1 |> map Text.strip
 
     in
     pb{ content = content, name = name, args = args, named = True }
