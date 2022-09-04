@@ -435,21 +435,17 @@ displayName block =
 
 displayDict :: PrimitiveBlock -> Text 
 displayDict block = 
-    ["dict: ", (dict block) |> Map.toList  |> map yazzle |> Text.unwords] |> Text.unwords
+    ["dict:", (dict block) |> Map.toList  |> map yazzle |> Text.unwords] |> Text.unwords
     
 
 yazzle :: (Text, [Text])  -> Text
 yazzle (txt, txtList) =
-    [txt, ": ", Text.unwords txtList] |> Text.unwords
-
--- |> map (\(k,v) -> [k, ":", Text.unwords k])
-   
--- ff =  (map (\(k,v) -> [k, ":", unwords k])) 
+    [txt <> ":", Text.unwords txtList] |> Text.unwords
 
 
 displayBlock :: PrimitiveBlock -> Text
 displayBlock block = 
-    Text.unlines $ displayBlockType block : displayName block : displayArgs block : displayDict block : "------" : (PrimitiveBlock.content $ block  ) 
+    Text.unlines $ displayBlockType block : displayName block : displayArgs block : displayDict block :  "------" : (PrimitiveBlock.content $ block  ) 
 
 displayBlockType :: PrimitiveBlock -> Text
 displayBlockType block = 
