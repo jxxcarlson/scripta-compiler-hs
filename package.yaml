@@ -25,6 +25,8 @@ dependencies:
 - flow
 - megaparsec
 - containers
+- hspec
+- QuickCheck
 
 
 ghc-options:

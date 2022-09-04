@@ -5,6 +5,12 @@
 -- https://cpufun.substack.com/p/setting-up-the-apple-m1-for-native
 -- https://www.reddit.com/r/haskell/comments/tqzxy1/now_that_stackage_supports_ghc_92_is_it_easy_to/
 
+-- TESTING
+-- https://mmhaskell.com/testing
+-- @av: use hspec
+-- https://hspec.github.io/
+-- https://www.youtube.com/watch?v=PGsDvgmZF7A
+
 module PrimitiveBlock (PrimitiveBlock, content, cleanArgs, empty, parse, displayBlocks) where
 
 

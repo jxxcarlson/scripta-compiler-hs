@@ -28,6 +28,7 @@ library
       Language
       Line
       PrimitiveBlock
+      Test.PrimitiveBlockTest
       TestData
   other-modules:
       Paths_scripta_compiler
@@ -35,9 +36,11 @@ library
       src
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
-      base >=4.7 && <5
+      QuickCheck
+    , base >=4.7 && <5
     , containers
     , flow
+    , hspec
     , megaparsec
     , text
   default-language: Haskell2010
@@ -50,9 +53,11 @@ executable scripta-compiler-exe
       app
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      QuickCheck
+    , base >=4.7 && <5
     , containers
     , flow
+    , hspec
     , megaparsec
     , scripta-compiler
     , text
@@ -67,9 +72,11 @@ test-suite scripta-compiler-test
       test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      QuickCheck
+    , base >=4.7 && <5
     , containers
     , flow
+    , hspec
     , megaparsec
     , scripta-compiler
     , text
