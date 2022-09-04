@@ -23,7 +23,6 @@ data PrimitiveBlock = PrimitiveBlock
     , args :: [Text]
     , content  :: [Text]
     , name  :: Maybe Text
-    , named :: Bool
     , blockType  :: PrimitiveBlockType
     , sourceText :: Text
     } deriving (Eq)
@@ -38,7 +37,6 @@ empty =
     , content = []
     , name = Nothing
     , args = []
-    , named = False
     , sourceText = ""
     , blockType = PBParagraph
     }
@@ -246,36 +244,10 @@ blockFromLine lang line =
     , content =  [Line.content line] -- [Text.fromChunks [Line.prefix line, Line.content line]]
     , name = Nothing
     , args = []
-    , named = False
     , sourceText = ""
     , blockType = Line.getBlockType lang (Line.content line)
     }
         |> elaborate line 
-
-
--- elaborate1 :: Line -> PrimitiveBlock -> PrimitiveBlock
--- elaborate1 line pb =
---     if named pb then
---         pb
-
---     else 
---         if (PrimitiveBlock.content pb) == [ "" ] then
---         pb
-
---         else
---             let
---                 ( name, args ) =
---                     -- TODO: note this change: it needs to be verified
---                     Line.getNameAndArgs line
-
---                 content =
---                     if (blockType pb) == PBVerbatim then
-
---                         map Text.strip (PrimitiveBlock.content pb)
-
---                     else (PrimitiveBlock.content pb)
---             in
---             pb{ content = content, name = name, args = args, named = True }
 
 
 elaborate :: Line -> PrimitiveBlock -> PrimitiveBlock
@@ -291,7 +263,7 @@ elaborate line pb =
                 PBVerbatim -> PrimitiveBlock.content pb |> drop 1 |> map Text.strip
 
     in
-    pb{ content = content, name = name, args = args, named = True }
+    pb{ content = content, name = name, args = args }
 
 
 addCurrentLine :: State -> Line -> State
@@ -363,7 +335,7 @@ displayName :: PrimitiveBlock -> Text
 displayName block = 
     case name block of 
         Nothing -> "name: anon"
-        Just txt -> ["name: ",  txt] |> Text.unwords
+        Just txt -> ["name:",  txt] |> Text.unwords
 
 displayBlock :: PrimitiveBlock -> Text
 displayBlock block = 
@@ -378,7 +350,7 @@ displayBlockType block =
 
 displayArgs :: PrimitiveBlock -> Text
 displayArgs block = 
-    ("args: " : args block) |> Text.unwords   
+    ("args:" : args block) |> Text.unwords   
 
 
 displayBlocks :: [PrimitiveBlock] -> Text
