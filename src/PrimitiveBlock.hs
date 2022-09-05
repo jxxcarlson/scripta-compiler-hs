@@ -26,6 +26,106 @@ import Language (Language(..))
 import Flow ((|>))
 import Debug.Trace
 
+
+
+{-
+
+    The function 
+
+        parse :: Language -> (Text -> Bool) ->  [Text] ->  [PrimitiveBlock]
+
+    transforms input text like that displayed below
+
+        | section 1 foo:bar yada:a b c
+        Introduction
+
+        blah blah blah ...
+        etc.
+
+          abc
+          def
+
+        || image 71 46 width:300 caption:Primitive Steam Engine
+        https://techmuseum.org/steam-engine.png
+
+
+    and transforms it into a list of blocks like these:
+
+        type: Ordinary
+        lineNumber: 1
+        position: 0
+        indent: 0
+        name: section
+        args:, 1
+        dict: foo: bar, yada: a b c
+        ------
+        Introduction
+
+        type: Paragraph
+        lineNumber: 4
+        position: 42
+        indent: 0
+        name: anon
+        args:
+        dict:
+        ------
+        blah blah blah ...
+        etc.
+
+        type: Paragraph
+        lineNumber: 7
+        position: 64
+        indent: 2
+        name: anon
+        args:
+        dict:
+        ------
+        abc
+        def
+
+        type: Verbatim
+        lineNumber: 10
+        position: 70
+        indent: 0
+        name: image
+        args:, 71, 46
+        dict: caption: Primitive Steam Engine, width: 300
+        ------
+        https://techmuseum.org/steam-engine.png
+
+    Blocks consist of consecutive non-empty lines separated by empty lines.  A block
+    consists of a possibly empty header and a body.  The header, if present, is the 
+    first line.  A header line has the form
+
+        | BLOCK-NAME ARGS
+
+    or
+
+        || BLOCK-NAME ARGS
+
+    where ARGS = w1 w2 ... is a sequence of words separated by spaces.  The ARGS
+    consist of postional args, which are words not containing ':', followed
+    by named args.  For example, the line
+
+        2 3 5 width:300 caption:Steam Engine
+
+    has positional args 2 3 5 and names args 'width' and 'caption'.  This line would 
+    results in the fields args and dict of a PrimitiveBlock:
+        
+        args = ["2", "3", "5"]
+        dict = Map.fromList [("width", ["300"]), ("caption", ["Steam", "Engine"])]
+
+    Thus positional args are retained while named args are installed in the 'dict'
+    field as key-value pairs, where the value is a list of words.
+
+    The position field indicates the position of the first character of a block on the source text.
+    The lineNumber is the 1-based line number in the source text on which the block begins.
+
+    Primitive blocks may be of BlockType PBOrdinary, PBVerbatim, or PBParagraph.  The body
+    of a PBParagraph or a PBOrdinary block is later parsed as text in whatever markup
+    language is used.  The body of a PBVerbatim block is not parsed.
+
+-}
 data PrimitiveBlock = PrimitiveBlock
     { indent :: Int
     , lineNumber :: Int
@@ -61,7 +161,7 @@ data State =
     , lines_ :: [Text]
     , inBlock :: Bool
     , inVerbatim :: Bool
-    , indent :: Int
+    , indentation :: Int
     , currentLineNumber :: Int
     , cursor :: Int
     , isVerbatimLine :: Text -> Bool
@@ -77,12 +177,12 @@ instance Show State where
     show (((label state), map PrimitiveBlock.content $ blocks state) )
 
 init :: Language -> (Text -> Bool) ->  [Text] -> State
-init lang_ isVerbatimLine_ lines_ =
+init lang_ isVerbatimLine_ lines__ =
    State{ blocks = []
     , currentBlock = Nothing
     , lang = lang_
-    , lines_ = lines_
-    , indent = 0
+    , lines_ = lines__
+    , indentation = 0
     , currentLineNumber = 0
     , cursor = 0
     , inBlock = False
@@ -103,25 +203,25 @@ language and a function for determining when a string is the first line
 of a verbatim block
 -}
 parse :: Language -> (Text -> Bool) ->  [Text] ->  [PrimitiveBlock]
-parse lang_ isVerbatimLine lines_ =
+parse lang_ isVerbatimLine_ lines_ =
     case lang_ of
         L0Lang ->
-            lines_ |> parse_ lang_ isVerbatimLine 
+            lines_ |> parse_ lang_ isVerbatimLine_ 
 
         MicroLaTeXLang ->
             --lines_ |> MicroLaTeX.Parser.TransformLaTeX.toL0 |> parse_ lang isVerbatimLine
-            lines_ |> parse_ lang_ isVerbatimLine
+            lines_ |> parse_ lang_ isVerbatimLine_
 
         
 parse_ :: Language -> (Text -> Bool) ->  [Text] -> [PrimitiveBlock]
-parse_ lang isVerbatimLine lines2 =
-    loop (PrimitiveBlock.init lang isVerbatimLine lines2) nextStep
+parse_ lang_ isVerbatimLine_ lines2 =
+    loop (PrimitiveBlock.init lang_ isVerbatimLine_ lines2) nextStep
         |> map (\block -> finalize block)
 
 
 head_ :: [Text] -> Maybe Text
 head_ [] = Nothing 
-head_ (first:srest) = Just first
+head_ (first:_) = Just first
 
 nextStep :: State -> Step State  [PrimitiveBlock]
 nextStep state =
@@ -151,7 +251,7 @@ nextStep state =
                         cursor state + 1 
 
                     else
-                        cursor state + (Text.length rawLine |> fromIntegral) + 1) 
+                        cursor state + (Text.length rawLine) + 1) 
 
                 currentLine :: Line
                 currentLine =
@@ -197,12 +297,12 @@ finalize block =
         finalContent =
            reverse (PrimitiveBlock.content block)
 
-        sourceText =
+        sourceText_ =
             -- String.join "\n" content
             Text.intercalate "\n" finalContent
 
     in
-    block{content = finalContent, sourceText = sourceText }
+    block{content = finalContent, sourceText = sourceText_ }
 
 
 isNonEmptyBlank :: Line -> Bool
@@ -242,22 +342,23 @@ createBlock state currentLine =
         , currentLineNumber = (currentLineNumber state) + 1
         , cursor = (cursor state) + (Text.length (Line.content currentLine) |> fromIntegral)
         , count = (count state) + 1
-        , indent = (Line.indent currentLine)
+        , indentation = (Line.indent currentLine)
         , inBlock = True
         , currentBlock = newBlock
         , blocks = newBlocks
     } 
 
 blockFromLine :: Language -> Line -> PrimitiveBlock
-blockFromLine lang line =
+blockFromLine lang_ line =
    PrimitiveBlock { indent = Line.indent line
     , lineNumber = Line.lineNumber line
     , position = Line.position line
     , content =  [Line.content line] -- [Text.fromChunks [Line.prefix line, Line.content line]]
     , name = Nothing
     , args = []
+    , dict = Map.empty
     , sourceText = ""
-    , blockType = Line.getBlockType lang (Line.content line)
+    , blockType = Line.getBlockType lang_ (Line.content line)
     }
         |> elaborate line 
 
@@ -265,7 +366,7 @@ blockFromLine lang line =
 elaborate :: Line -> PrimitiveBlock -> PrimitiveBlock
 elaborate line pb =
     let
-        ( name, args_ ) =
+        ( name_, args_ ) =
             Line.getNameAndArgs line
 
         content = 
@@ -275,7 +376,7 @@ elaborate line pb =
                 PBVerbatim -> PrimitiveBlock.content pb |> drop 1 |> map Text.strip
 
     in
-    pb{ content = content, name = name, args = cleanArgs args_, dict = args_ |> prepareList |> prepareKVData }
+    pb{ content = content, name = name_, args = cleanArgs args_, dict = args_ |> prepareList |> prepareKVData }
 
 
 addCurrentLine :: State -> Line -> State
@@ -317,7 +418,7 @@ commitBlock state currentLine =
         Nothing ->
             state{ 
                  lines_ = Prelude.drop 1 (lines_ state)
-                , indent = Line.indent currentLine
+                , indentation = Line.indent currentLine
             } 
 
         Just block ->
@@ -450,10 +551,24 @@ displayName block =
         Nothing -> "name: anon"
         Just txt -> ["name:",  txt] |> Text.unwords
 
+displayLineNumber :: PrimitiveBlock -> Text
+displayLineNumber block = 
+    ["lineNumber:", (Text.pack . show) (lineNumber block)] |> Text.unwords
+
+displayPosition :: PrimitiveBlock -> Text
+displayPosition block = 
+    ["position:", (Text.pack . show) (position block)] |> Text.unwords
+
+displayIndentation :: PrimitiveBlock -> Text
+displayIndentation block = 
+    ["indent:", (Text.pack . show) (indent block)] |> Text.unwords
+
+
+
 displayDict :: PrimitiveBlock -> Text 
 displayDict block = 
-    ["dict:", (dict block) |> Map.toList  |> map yazzle |> Text.unwords] |> Text.unwords
-    
+    -- ["dict:", (dict block) |> Map.toList  |> map yazzle  |> Text.unwords] |> Text.unwords
+    ["dict:", (dict block) |> Map.toList |> map yazzle  |> Text.intercalate ", "] |> Text.unwords
 
 yazzle :: (Text, [Text])  -> Text
 yazzle (txt, txtList) =
@@ -462,7 +577,7 @@ yazzle (txt, txtList) =
 
 displayBlock :: PrimitiveBlock -> Text
 displayBlock block = 
-    Text.unlines $ displayBlockType block : displayName block : displayArgs block : displayDict block :  "------" : (PrimitiveBlock.content $ block  ) 
+    Text.unlines $ displayBlockType block : displayLineNumber block : displayPosition block : displayIndentation block : displayName block : displayArgs block : displayDict block :  "------" : (PrimitiveBlock.content $ block  ) 
 
 displayBlockType :: PrimitiveBlock -> Text
 displayBlockType block = 
@@ -473,7 +588,7 @@ displayBlockType block =
 
 displayArgs :: PrimitiveBlock -> Text
 displayArgs block = 
-    ("args:" : args block) |> Text.unwords   
+    ("args:" : args block) |> Text.intercalate ", "   
 
 
 displayBlocks :: [PrimitiveBlock] -> Text

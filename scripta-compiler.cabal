@@ -28,8 +28,6 @@ library
       Language
       Line
       PrimitiveBlock
-      Test.PrimitiveBlockTest
-      TestData
   other-modules:
       Paths_scripta_compiler
   hs-source-dirs:
