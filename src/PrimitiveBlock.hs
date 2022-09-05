@@ -265,16 +265,16 @@ nextStep state =
                 -- create a new block: we are not in a block, but
                 -- the current line is nonempty and nonblank
                 ( False, False, False ) ->
-                    Loop (createBlock state{label = "3, NEW" } currentLine)
+                    Loop (createBlock newCursor currentLine  state{label = "3, NEW" } )
 
                 -- A nonempty line was encountered inside a block, so add it
                 ( True, False, _ ) ->
-                    Loop (addCurrentLine state{label = "4, ADD" } currentLine)
+                    Loop (addCurrentLine newCursor currentLine  state{label = "4, ADD" } )
 
                 -- commit the current block: we are in a block and the
                 -- current line is empty
                 ( True, True, _ ) ->
-                    Loop (commitBlock state{label = "5, COMMIT" } currentLine)
+                    Loop (commitBlock newCursor currentLine  state{label = "5, COMMIT" } )
 
 
 loop :: state -> (state -> Step state a) -> a
@@ -313,8 +313,8 @@ advance newCursor state =
         , count = (count state) + 1
     } 
 
-createBlock :: State -> Line -> State
-createBlock state currentLine =
+createBlock :: Int ->  Line ->  State -> State
+createBlock newCursor currentLine state  =
     let
         newBlocks =
             case currentBlock state of
@@ -335,7 +335,7 @@ createBlock state currentLine =
     in
     state{lines_ = drop 1 (lines_ state)
         , currentLineNumber = (currentLineNumber state) + 1
-        , cursor = (cursor state) + (Text.length (Line.content currentLine) + 1 |> fromIntegral)
+        , cursor = newCursor 
         , count = (count state) + 1
         , indentation = (Line.indent currentLine)
         , inBlock = True
@@ -374,8 +374,8 @@ elaborate line pb =
     pb{ content = content, name = name_, args = cleanArgs args_, dict = args_ |> prepareList |> prepareKVData }
 
 
-addCurrentLine :: State -> Line -> State
-addCurrentLine state currentLine =
+addCurrentLine :: Int ->  Line ->  State -> State
+addCurrentLine newCursor currentLine state =
     case currentBlock state of
         Nothing ->
             state{ lines_ = Prelude.drop 1 (lines_ state) } 
@@ -383,7 +383,7 @@ addCurrentLine state currentLine =
         Just block ->
             state{lines_ = Prelude.drop 1 (lines_ state)
                 , currentLineNumber = currentLineNumber state + 1
-                , cursor = (cursor state)+ (Text.length (Line.content currentLine)  + 1 |> fromIntegral)
+                , cursor = newCursor 
                 , count = (count state) + 1
                 , currentBlock =
                     Just (addCurrentLine_ currentLine block)
@@ -407,8 +407,8 @@ addCurrentLine_ line block =
  
 
 
-commitBlock :: State -> Line -> State
-commitBlock state currentLine =
+commitBlock :: Int -> Line -> State -> State
+commitBlock newCursor currentLine state  =
     case currentBlock state of
         Nothing ->
             state{ 
@@ -428,7 +428,7 @@ commitBlock state currentLine =
             state{ 
                  lines_ = Prelude.drop 1 (lines_ state)
                 , currentLineNumber = currentLineNumber state + 1
-                , cursor = cursor state + (Text.length (Line.content currentLine) + 1 |> fromIntegral)
+                , cursor = newCursor 
                 , count = count state + 1
                 , blocks = newBlocks
                 , inBlock = False
