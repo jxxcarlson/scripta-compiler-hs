@@ -247,18 +247,13 @@ nextStep state =
         Just rawLine ->
             let
                 -- cursor = position of current character in source text
-                newCursor =
-                    (if rawLine == "" then
-                        cursor state + 1 
-
-                    else
-                        cursor state + (Text.length rawLine) + 1) 
+                newCursor = cursor state + (Text.length rawLine) + 1 
 
                 currentLine :: Line
                 currentLine =
-                    -- TODO: the below is wrong
-                    Line.classify (cursor state) (currentLineNumber state + 1) rawLine 
-                    -- Line.classify newCursor (currentLineNumber state + 1) rawLine 
+                    Line.classify (cursor state) (currentLineNumber state + 1) rawLine |> xlog "currentLine"
+
+                newState = state {cursor = newCursor}
 
             in
             case ( inBlock state, Line.isEmpty currentLine, isNonEmptyBlank currentLine ) of
