@@ -11,7 +11,7 @@
 -- https://hspec.github.io/
 -- https://www.youtube.com/watch?v=PGsDvgmZF7A
 
-module PrimitiveBlock (PrimitiveBlock, content, cleanArgs, empty, parse, displayBlocks) where
+module PrimitiveBlock (PrimitiveBlock, content, lineNumber, position, cleanArgs, empty, parse, displayBlocks) where
 
 
 import qualified Data.Text as Text
@@ -246,6 +246,7 @@ nextStep state =
 
         Just rawLine ->
             let
+                -- cursor = position of current character in source text
                 newCursor =
                     (if rawLine == "" then
                         cursor state + 1 
@@ -257,6 +258,8 @@ nextStep state =
                 currentLine =
                     -- TODO: the below is wrong
                     Line.classify (cursor state) (currentLineNumber state + 1) rawLine 
+                    -- Line.classify newCursor (currentLineNumber state + 1) rawLine 
+
             in
             case ( inBlock state, Line.isEmpty currentLine, isNonEmptyBlank currentLine ) of
                 -- not in a block, pass over empty line
@@ -352,7 +355,7 @@ blockFromLine :: Language -> Line -> PrimitiveBlock
 blockFromLine lang_ line =
    PrimitiveBlock { indent = Line.indent line
     , lineNumber = Line.lineNumber line
-    , position = Line.position line
+    , position = Line.position line -- + 1 -- ??? todo
     , content =  [Line.content line] -- [Text.fromChunks [Line.prefix line, Line.content line]]
     , name = Nothing
     , args = []
@@ -470,7 +473,7 @@ findChar c txt =
         Nothing -> False
         Just _ -> True
 
-
+prepareKVData :: [Text] -> (Map Text [Text])
 prepareKVData data_ =
     let 
         initialState = KVState {input = data_, kvList = [], currentKey = Nothing, currentValue = [], kvStatus = KVInKey}
