@@ -249,11 +249,8 @@ nextStep state =
                 -- cursor = position of current character in source text
                 newCursor = cursor state + (Text.length rawLine) + 1 
 
-                currentLine :: Line
                 currentLine =
                     Line.classify (cursor state) (currentLineNumber state + 1) rawLine |> xlog "currentLine"
-
-                newState = state {cursor = newCursor}
 
             in
             case ( inBlock state, Line.isEmpty currentLine, isNonEmptyBlank currentLine ) of
@@ -338,7 +335,7 @@ createBlock state currentLine =
     in
     state{lines_ = drop 1 (lines_ state)
         , currentLineNumber = (currentLineNumber state) + 1
-        , cursor = (cursor state) + (Text.length (Line.content currentLine) |> fromIntegral)
+        , cursor = (cursor state) + (Text.length (Line.content currentLine) + 1 |> fromIntegral)
         , count = (count state) + 1
         , indentation = (Line.indent currentLine)
         , inBlock = True
@@ -350,8 +347,8 @@ blockFromLine :: Language -> Line -> PrimitiveBlock
 blockFromLine lang_ line =
    PrimitiveBlock { indent = Line.indent line
     , lineNumber = Line.lineNumber line
-    , position = Line.position line -- + 1 -- ??? todo
-    , content =  [Line.content line] -- [Text.fromChunks [Line.prefix line, Line.content line]]
+    , position = Line.position line 
+    , content =  [Line.content line] 
     , name = Nothing
     , args = []
     , dict = Map.empty
@@ -386,7 +383,7 @@ addCurrentLine state currentLine =
         Just block ->
             state{lines_ = Prelude.drop 1 (lines_ state)
                 , currentLineNumber = currentLineNumber state + 1
-                , cursor = (cursor state)+ (Text.length (Line.content currentLine) |> fromIntegral)
+                , cursor = (cursor state)+ (Text.length (Line.content currentLine)  + 1 |> fromIntegral)
                 , count = (count state) + 1
                 , currentBlock =
                     Just (addCurrentLine_ currentLine block)
@@ -398,15 +395,15 @@ addCurrentLine_ line block =
     if blockType block == PBVerbatim then
         if name block == Just "math" then
             block{  content = Line.content line : PrimitiveBlock.content block 
-            ,sourceText = Text.concat [sourceText block, "\n",  Line.prefix line, Line.content line ]}
+            , sourceText = Text.concat [sourceText block, "\n",  Line.prefix line, Line.content line ]}
 
         else
             block{ content = (Text.concat [Line.prefix line,  Line.content line]) : PrimitiveBlock.content block
-            ,sourceText = Text.concat [sourceText block, "\n",  Line.prefix line, Line.content line ]}  
+            , sourceText = Text.concat [sourceText block, "\n",  Line.prefix line, Line.content line ]}  
 
     else
         block{ content = Line.content line :  PrimitiveBlock.content block
-         ,sourceText = Text.concat [sourceText block, "\n",  Line.prefix line, Line.content line ]}  
+         , sourceText = Text.concat [sourceText block, "\n",  Line.prefix line, Line.content line ]}  
  
 
 
@@ -431,7 +428,7 @@ commitBlock state currentLine =
             state{ 
                  lines_ = Prelude.drop 1 (lines_ state)
                 , currentLineNumber = currentLineNumber state + 1
-                , cursor = cursor state + (Text.length (Line.content currentLine) |> fromIntegral)
+                , cursor = cursor state + (Text.length (Line.content currentLine) + 1 |> fromIntegral)
                 , count = count state + 1
                 , blocks = newBlocks
                 , inBlock = False
