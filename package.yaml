@@ -26,6 +26,7 @@ dependencies:
 - megaparsec
 - containers
 - hspec
+- ilist
 - QuickCheck
 
 

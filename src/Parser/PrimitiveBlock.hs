@@ -1,6 +1,8 @@
 {-# LANGUAGE OverloadedStrings, NoImplicitPrelude, DuplicateRecordFields, OverloadedLabels #-}
 
 -- OverloadedRecordDot
+-- https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/overloaded_record_dot.html
+
 -- https://pure-hack.com/posts/overloaded-labels-in-haskell/
 -- https://cpufun.substack.com/p/setting-up-the-apple-m1-for-native
 -- https://www.reddit.com/r/haskell/comments/tqzxy1/now_that_stackage_supports_ghc_92_is_it_easy_to/

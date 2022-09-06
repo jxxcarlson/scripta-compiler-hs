@@ -1,9 +1,11 @@
-module L0.Token (codeParser) where
+module L0.Token (tokenParser_, pp) where
 import qualified Data.Text as Text 
 import Data.Text (Text) 
 import Data.List
+import Data.List.Index (imap)
 
-import Text.Megaparsec (satisfy, many, Parsec)
+import Text.Megaparsec (parseMaybe, choice, satisfy, many, takeWhileP, getOffset, Parsec, Token, MonadParsec)
+import Text.Megaparsec.Char (string)
 import Data.Void
 
 -- TYPES
@@ -23,6 +25,23 @@ data L0Token
     -- | TokenError (List (DeadEnd Context Problem)) Meta
 
 data Meta = Meta { begin :: Int, end :: Int, index :: Int} deriving(Show)
+
+
+incrementIndex :: Int -> L0Token -> L0Token
+incrementIndex k token =
+    case token of 
+        LB meta -> LB (incrementMeta k meta)
+        RB meta -> RB (incrementMeta k meta)
+        S txt meta -> S txt (incrementMeta k meta)
+        W txt meta -> W txt (incrementMeta k meta)
+        MathToken meta -> MathToken (incrementMeta k meta)
+        BracketedMath txt meta ->  BracketedMath txt (incrementMeta k meta)
+        CodeToken meta -> CodeToken (incrementMeta k meta)
+
+incrementMeta :: Int -> Meta -> Meta
+incrementMeta k meta = 
+    meta{index = k + index meta}
+
 
 -- changeTokenIndicesFrom : Int -> Int -> List Token -> List Token
 -- changeTokenIndicesFrom from delta tokens =
@@ -441,17 +460,25 @@ codeChars =
     [ '`' ]
 
 
--- tokenParser_ : Int -> Int -> TokenParser
--- tokenParser_ start index =
---     Parser.oneOf
---         [ textParser start index
---         , leftBracketParser start index
---         , rightBracketParser start index
---         , bracketedMathParser start index
---         , mathParser start index
---         , codeParser start index
---         , whiteSpaceParser start index
---         ]
+pp txt = case parseMaybe (many (tokenParser_ 0 0)) txt of 
+            Nothing -> Nothing
+            Just tokens -> Just $ imap incrementIndex  tokens
+
+-- pp =  parseMaybe (many (tokenParser_ 0 0)) 
+
+
+
+tokenParser_ :: Int -> Int -> TokenParser L0Token
+tokenParser_ start index =
+    choice
+        [ textParser start index
+        , leftBracketParser start index
+        , rightBracketParser start index
+        -- , bracketedMathParser start index
+        , mathParser start index
+        , codeParser start index
+        , whiteSpaceParser start index
+        ]
 
 
 -- mathParser_ : Int -> Int -> TokenParser
@@ -478,16 +505,28 @@ codeChars =
 --         |> Parser.map (\data -> W data.content { begin = start, end = start, index = index })
 
 
--- leftBracketParser : Int -> Int -> TokenParser
--- leftBracketParser start index =
---     PT.text (\c -> c == '[') (\_ -> False)
---         |> Parser.map (\_ -> LB { begin = start, end = start, index = index })
+
+whiteSpaceParser :: Int -> Int -> TokenParser L0Token
+whiteSpaceParser start index = 
+    do
+      first <- satisfy (\c -> c == ' ')
+      rest <- many (satisfy (\c -> c == ' '))
+      return $ W (Text.pack (first : rest)) (Meta { begin = start, end = start, index = index })
+
+rightBracketParser :: Int -> Int -> TokenParser L0Token
+rightBracketParser start index = 
+    do
+      a <- getOffset
+      satisfy (\c -> c == ']')
+      return $ RB (Meta { begin = start + a, end = start + a, index = index })
 
 
--- rightBracketParser : Int -> Int -> TokenParser
--- rightBracketParser start index =
---     PT.text (\c -> c == ']') (\_ -> False)
---         |> Parser.map (\_ -> RB { begin = start, end = start, index = index })
+leftBracketParser :: Int -> Int -> TokenParser L0Token
+leftBracketParser start index = 
+    do
+      satisfy (\c -> c == '[')
+      return $ LB (Meta { begin = start, end = start, index = index })
+
 
 
 -- bracketedMathParser : Int -> Int -> TokenParser
@@ -501,9 +540,35 @@ codeChars =
 --         |= Parser.getSource
 
 
+-- bracketedMathParser :: Int -> Int -> TokenParser L0Token
+-- bracketedMathParser start index = 
+--     do
+--         a <- getOffset
+--         first <- string "\\[" :: TokenParser Text
+--         rest <- takeWhileP Nothing (/='\\') :: TokenParser Text
+--         b <- getOffset
+--         satisfy (=='\\')
+--         satisfy (==']')
+--         return (BracketedMath (rest) (Meta { begin = start, end = start + b - a + 1, index = index }) )
+        
+
+
+-- 
 -- textParser start index =
 --     PT.text (\c -> not <| List.member c (' ' :: languageChars)) (\c -> not <| List.member c (' ' :: languageChars))
 --         |> Parser.map (\data -> S data.content { begin = start, end = start + data.end - data.begin - 1, index = index })
+
+textParser :: Int -> Int -> TokenParser L0Token
+textParser start index = 
+    do
+      a <- getOffset
+      first <- satisfy (\c -> not $ Data.List.elem c (' ' : languageChars))
+      rest <- ( many $ satisfy (\c -> not $ Data.List.elem c (' ' : languageChars)))
+      b <- getOffset
+      let content = Text.pack (first : rest)
+      return $ S content (Meta { begin = start + a, end = start + b - 1, index = index })
+
+
 
 mathTextParser :: Int -> Int -> TokenParser L0Token
 mathTextParser start index = 
