@@ -7,8 +7,8 @@ import Flow ((|>))
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 
-import PrimitiveBlock
-import Language(Language(..))
+import Parser.PrimitiveBlock as PrimitiveBlock
+import Parser.Language(Language(..))
 
 
 main :: IO ()

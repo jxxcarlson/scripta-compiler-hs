@@ -25,9 +25,12 @@ source-repository head
 
 library
   exposed-modules:
-      Language
-      Line
-      PrimitiveBlock
+      L0.Token
+      Parser.Expr
+      Parser.Language
+      Parser.Line
+      Parser.Meta
+      Parser.PrimitiveBlock
   other-modules:
       Paths_scripta_compiler
   hs-source-dirs:

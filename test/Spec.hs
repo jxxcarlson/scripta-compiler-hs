@@ -1,18 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 import Test.Hspec
--- import Test.QuickCheck
--- import Control.Exception (evaluate)
-import PrimitiveBlock(PrimitiveBlock)
-import qualified PrimitiveBlock as PB
 import Data.Text (Text)
 import qualified Data.Text as T
-import Language (Language(..))
 import Flow ((|>))
-
--- import System.Environment
 import qualified Data.Text.IO as TIO
 
+
+import Parser.PrimitiveBlock(PrimitiveBlock)
+import qualified Parser.PrimitiveBlock as PB
+import Parser.Language (Language(..))
 
 main :: IO ()
 main = hspec $ do
