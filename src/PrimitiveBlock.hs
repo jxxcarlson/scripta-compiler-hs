@@ -11,10 +11,11 @@
 -- https://hspec.github.io/
 -- https://www.youtube.com/watch?v=PGsDvgmZF7A
 
-module PrimitiveBlock (PrimitiveBlock, content, lineNumber, position, cleanArgs, empty, parse, displayBlocks) where
+module PrimitiveBlock (PrimitiveBlock, content, checkPosition, lineNumber, position, cleanArgs, empty, parse, displayBlocks) where
 
 
 import qualified Data.Text as Text
+import qualified Data.Text.IO as TIO
 import Data.Text (Text)
 import Data.Map (Map)
 import qualified Data.List
@@ -250,7 +251,7 @@ nextStep state =
                 newCursor = cursor state + (Text.length rawLine) + 1 
 
                 currentLine =
-                    Line.classify (cursor state) (currentLineNumber state + 1) rawLine |> xlog "currentLine"
+                    Line.classify (cursor state) (currentLineNumber state + 1) rawLine -- |> xlog "currentLine"
 
             in
             case ( inBlock state, Line.isEmpty currentLine, isNonEmptyBlank currentLine ) of
@@ -590,3 +591,29 @@ displayBlocks :: [PrimitiveBlock] -> Text
 displayBlocks blocks_ = 
    (map displayBlock blocks_) |> Text.unlines
 
+
+
+checkPosition blockNumber = 
+    do
+    text <- TIO.readFile "ex0.txt"
+    putStrLn $ "block: " <> show blockNumber
+    let lines = Text.lines text
+    let blocks = parseBlock text
+    let block = blocks !! blockNumber
+    let lineNo = (PrimitiveBlock.lineNumber block)
+    let firstLine = lines !! (lineNo - 1)
+    putStrLn $ "Line: " <> (Text.unpack firstLine)
+    let pos = PrimitiveBlock.position block
+    putStrLn $ "line number of block: " <> (show $ lineNo)
+    putStrLn $ "position of block: " <> (show $ pos)
+    putStrLn $ "firstLine: " <> (Text.unpack firstLine)
+    putStrLn $ "slice: " <> (Text.unpack $ slice (pos) (pos + Text.length firstLine) text)
+    putStrLn $ "blocks: " <> (show $ length blocks)
+   
+
+slice :: Int -> Int -> Text -> Text
+slice a b text = 
+    text |> Text.take (b + 1) |> Text.drop a
+
+parseBlock :: Text -> [PrimitiveBlock]
+parseBlock text = PrimitiveBlock.parse L0Lang (\_ -> True) (Text.lines text ) 

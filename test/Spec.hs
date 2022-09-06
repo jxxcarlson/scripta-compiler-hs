@@ -23,7 +23,15 @@ main = hspec $ do
     it "can parse a paragraph" $ do
       (parseBlock input2 |> PB.displayBlocks) `shouldBe` expected2
 
-    it "can compute character positions" $ checkPositions
+    it "can compute character positions, 0" $ checkPosition 0
+
+    it "can compute character positions, 2" $ checkPosition 2
+
+    it "can compute character positions, 4" $ checkPosition 4
+
+    it "can compute character positions, 6"$ checkPosition 6
+
+
 
 parseBlock :: Text -> [PrimitiveBlock]
 parseBlock text = PB.parse L0Lang (\_ -> True) (T.lines text ) 
@@ -56,24 +64,18 @@ expected2 = "type: Paragraph\n\
 \abc\n\
 \def\n\n"
 
--- |> filter (\b -> PrimitiveBlock.content b /= [T.pack ""])
 
-checkPositions = 
+
+checkPosition blockNumber = 
     do
     text <- TIO.readFile "ex1.txt"
     let lines = T.lines text
     let blocks = parseBlock text
-    let block = blocks !! 1
+    let block = blocks !! blockNumber
     let lineNo = (PB.lineNumber block)
-    let firstLine = lines !! lineNo
-    putStrLn $ "Line: " <> (T.unpack firstLine)
-    let pos = PB.position block
-    putStrLn $ "line number of block: " <> (show $ 1 + lineNo)
-    putStrLn $ "position of block: " <> (show $ pos)
-
-    putStrLn $ "slice: " <> (T.unpack $ slice (pos) (pos - 1 + T.length firstLine) text)
-    putStrLn $ "blocks: " <> (show $ length blocks)
-    1 `shouldBe` 1
+    let firstLine = lines !! (lineNo - 1)
+=   let pos = PB.position block
+    firstLine `shouldBe` (slice (pos) (pos + T.length firstLine - 1) text)
 
 slice :: Int -> Int -> Text -> Text
 slice a b text = 
