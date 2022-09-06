@@ -71,7 +71,7 @@ checkPosition blockNumber =
     let block = blocks !! blockNumber
     let lineNo = (PB.lineNumber block)
     let firstLine = lines !! (lineNo - 1)
-=   let pos = PB.position block
+    let pos = PB.position block
     firstLine `shouldBe` (slice (pos) (pos + T.length firstLine - 1) text)
 
 slice :: Int -> Int -> Text -> Text
