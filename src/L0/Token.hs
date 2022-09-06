@@ -1,20 +1,28 @@
-module L0.Token where
-import Parser.Meta (Meta)
+module L0.Token (codeParser) where
+import qualified Data.Text as Text 
+import Data.Text (Text) 
+import Data.List
 
+import Text.Megaparsec (satisfy, many, Parsec)
+import Data.Void
 
 -- TYPES
 
+type TokenParser = Parsec Data.Void.Void Text
 
-data Token
+
+data L0Token
     = LB Meta
     | RB Meta
-    | S String Meta
-    | W String Meta
+    | S Text Meta
+    | W Text Meta
     | MathToken Meta
-    | BracketedMath String Meta
+    | BracketedMath Text Meta
     | CodeToken Meta
+    deriving (Show)
     -- | TokenError (List (DeadEnd Context Problem)) Meta
 
+data Meta = Meta { begin :: Int, end :: Int, index :: Int} deriving(Show)
 
 -- changeTokenIndicesFrom : Int -> Int -> List Token -> List Token
 -- changeTokenIndicesFrom from delta tokens =
@@ -404,10 +412,10 @@ data Token
 --                     InCode
 
 
--- {-| Expression.Tokenizer.tokenParser calls L1.tokenParser
--- with arguments tokenStack and start. The first argument
--- is not used (although it is for the Markdown parser)
--- -}
+{-| Expression.Tokenizer.tokenParser calls L1.tokenParser
+with arguments tokenStack and start. The first argument
+is not used (although it is for the Markdown parser)
+-}
 -- tokenParser : Mode -> Int -> Int -> TokenParser
 -- tokenParser mode start index =
 --     case mode of
@@ -421,16 +429,16 @@ data Token
 --             codeParser_ start index
 
 
--- languageChars =
---     [ '[', ']', '`', '$', '\\' ]
+languageChars =
+    [ '[', ']', '`', '$', '\\' ]
 
 
--- mathChars =
---     [ '$' ]
+mathChars =
+    [ '$' ]
 
 
--- codeChars =
---     [ '`' ]
+codeChars =
+    [ '`' ]
 
 
 -- tokenParser_ : Int -> Int -> TokenParser
@@ -497,24 +505,42 @@ data Token
 --     PT.text (\c -> not <| List.member c (' ' :: languageChars)) (\c -> not <| List.member c (' ' :: languageChars))
 --         |> Parser.map (\data -> S data.content { begin = start, end = start + data.end - data.begin - 1, index = index })
 
-
--- mathTextParser start index =
---     PT.text (\c -> not <| List.member c (' ' :: mathChars)) (\c -> not <| List.member c (' ' :: languageChars))
---         |> Parser.map (\data -> S data.content { begin = start, end = start + data.end - data.begin - 1, index = index })
-
-
--- codeTextParser start index =
---     PT.text (\c -> not <| List.member c (' ' :: codeChars)) (\c -> not <| List.member c (' ' :: languageChars))
---         |> Parser.map (\data -> S data.content { begin = start, end = start + data.end - data.begin - 1, index = index })
+mathTextParser :: Int -> Int -> TokenParser L0Token
+mathTextParser start index = 
+    do
+      satisfy (\c -> not $ Data.List.elem c (' ' : mathChars))
+      content_ <- ( many $ satisfy (\c -> not $ Data.List.elem c (' ' : languageChars)))
+      let content = Text.pack content_
+      return $ S content (Meta { begin = start, end = start + (Text.length content) - 1, index = index })
 
 
--- mathParser : Int -> Int -> TokenParser
--- mathParser start index =
---     PT.text (\c -> c == '$') (\_ -> False)
---         |> Parser.map (\_ -> MathToken { begin = start, end = start, index = index })
+codeTextParser :: Int -> Int -> TokenParser L0Token
+codeTextParser start index = 
+    do
+      satisfy (\c -> not $ Data.List.elem c (' ' : codeChars))
+      content_ <- ( many $ satisfy (\c -> not $ Data.List.elem c (' ' : languageChars)))
+      let content = Text.pack content_
+      return $ S content (Meta { begin = start, end = start + (Text.length content) - 1, index = index })
 
 
--- codeParser : Int -> Int -> TokenParser
--- codeParser start index =
---     PT.text (\c -> c == '`') (\_ -> False)
---         |> Parser.map (\_ -> CodeToken { begin = start, end = start, index = index })
+mathParser :: Int -> Int -> TokenParser L0Token
+mathParser start index = 
+    do
+      satisfy (\c -> c == '$')
+      return $ MathToken (Meta { begin = start, end = start, index = index })
+
+
+codeParser :: Int -> Int -> TokenParser L0Token
+codeParser start index = 
+    do
+      satisfy (\c -> c == '`')
+      return $ CodeToken (Meta { begin = start, end = start, index = index })
+
+
+-- lineParser :: Int -> Int -> LineParser Line
+-- lineParser position_ lineNumber_ = 
+--   do 
+--     prefix_ <- many (satisfy (\c -> c == ' ')) 
+--     content_ <- many (satisfy (\c -> c /= '\n')) 
+--     return Line {indent =  Prelude.length prefix_, prefix = Text.pack prefix_, position = position_, lineNumber = lineNumber_, content = Text.pack content_}
+

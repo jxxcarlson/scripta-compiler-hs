@@ -6,14 +6,10 @@ module Parser.Line(PrimitiveBlockType(..), Line, getNameAndArgs, isEmpty, indent
 -- https://serokell.io/blog/parser-combinators-in-haskell
 -- https://akashagrawal.me/2017/01/19/beginners-guide-to-megaparsec.html
 
---import Data.Text.Lazy as Text ( pack, unpack, Text, take, strip, words, drop )
 import qualified Data.Text as Text 
-import Data.Text (Text) -- , take, words, pack, drop, concat, intercalate, length, strip)
-import Data.Maybe ()
+import Data.Text (Text) 
 import Text.Megaparsec
 import Data.Void
-
-
 
 import Parser.Language (Language(..)) 
 

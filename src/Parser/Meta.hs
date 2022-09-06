@@ -1,13 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 
-module Parser.Meta (Meta, dummy) where
+module Parser.Meta (Meta(..), dummy) where
 
 import Prelude hiding(id)
 
 
 data Meta =
-    Meta { begin :: Int, end :: Int, index :: Int, id :: String }
+    Meta { begin :: Int, end :: Int, index :: Int, id :: String } deriving (Show)
 
 
 dummy =
