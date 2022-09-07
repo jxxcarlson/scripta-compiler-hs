@@ -4,10 +4,12 @@
 module Parser.Meta (Meta(..), dummy) where
 
 import Prelude hiding(id)
+import qualified Data.Text as Text 
+import Data.Text (Text) 
 
 
 data Meta =
-    Meta { begin :: Int, end :: Int, index :: Int, id :: String } deriving (Show)
+    Meta { begin :: Int, end :: Int, index :: Int, id :: Text } deriving (Show)
 
 
 dummy =

@@ -1,8 +1,9 @@
 module Parser.Expr (Expr(..)) where
 
 import Parser.Meta (Meta)
+import qualified Data.Text
 
 data Expr
-    = Fun String [Expr] Meta
-    | Text String Meta
-    | Verbatim String String Meta
+    = Fun Data.Text.Text [Expr] Meta
+    | Text Data.Text.Text Meta
+    | Verbatim String Data.Text.Text Meta

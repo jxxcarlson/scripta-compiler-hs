@@ -28,6 +28,7 @@ dependencies:
 - hspec
 - ilist
 - QuickCheck
+- vector
 
 
 ghc-options:
