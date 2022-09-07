@@ -1,4 +1,4 @@
-module L0.Token (tokenParser_, pp) where
+module L0.Token (tokenParser_, pp, displayTokens) where
 import qualified Data.Text as Text 
 import Data.Text (Text) 
 import Data.List
@@ -24,6 +24,17 @@ data L0Token
     | CodeToken Meta
     deriving (Show)
     -- | TokenError (List (DeadEnd Context Problem)) Meta
+
+display :: L0Token -> Text
+display token = 
+     case token of 
+        LB _ -> "["
+        RB _ -> "]"
+        S txt _ -> txt
+        W txt _ -> txt
+        MathToken _ -> "$"
+        BracketedMath txt _ ->  "\\[" <> txt <> "\\]"
+        CodeToken _ -> "`"
 
 data Meta = Meta { begin :: Int, end :: Int, index :: Int} deriving(Show)
 
@@ -62,10 +73,8 @@ setIndex :: Int -> L0Token -> L0Token
 setIndex k token = 
     changeMeta (\meta -> meta{index = k}) token
 
-
-
 data State a =
-    State { source :: String
+    State { source :: Text
     , scanpointer :: Int
     , tokenIndex :: Int
     , sourceLength :: Int
@@ -116,32 +125,28 @@ getMeta token =
         CodeToken meta -> meta
 
 
-toString :: [L0Token] -> String
-toString tokens =
-   map show tokens |> mconcat
+displayTokens :: [L0Token] -> Text
+displayTokens tokens =
+   tokens |> map display |> mconcat
 
 
 length :: L0Token -> Int
 length token = extractMeta (\meta -> (end meta) - (begin meta)) token
 
 
--- init : String -> State a
--- init str =
---     { source = str
---     , scanpointer = 0
---     , sourceLength = String.length str
---     , tokens = []
---     , currentToken = Nothing
---     , tokenIndex = 0
---     , mode = Normal
---     }
+init :: Text -> State a
+init txt =
+   State { source = txt
+    , scanpointer = 0
+    , sourceLength = Text.length txt
+    , tokens = []
+    , currentToken = Nothing
+    , tokenIndex = 0
+    , mode = Normal
+    }
 
 
--- type alias TokenParser =
---     Parser Context Problem Token
-
-
--- run : String -> List Token
+-- run : Text -> List L0Token
 -- run source =
 --     loop (init source) nextStep
 
@@ -308,7 +313,7 @@ is not used (although it is for the Markdown parser)
 
 
 languageChars =
-    [ '[', ']', '`', '$', '\\' ]
+    [ '[', ']', '`', '$' ]
 
 
 mathChars =
@@ -453,12 +458,4 @@ codeParser start index =
     do
       satisfy (\c -> c == '`')
       return $ CodeToken (Meta { begin = start, end = start, index = index })
-
-
--- lineParser :: Int -> Int -> LineParser Line
--- lineParser position_ lineNumber_ = 
---   do 
---     prefix_ <- many (satisfy (\c -> c == ' ')) 
---     content_ <- many (satisfy (\c -> c /= '\n')) 
---     return Line {indent =  Prelude.length prefix_, prefix = Text.pack prefix_, position = position_, lineNumber = lineNumber_, content = Text.pack content_}
 
