@@ -7,6 +7,7 @@ import Data.List.Index (imap)
 import Text.Megaparsec (parseMaybe, choice, satisfy, many, takeWhileP, getOffset, Parsec, Token, MonadParsec)
 import Text.Megaparsec.Char (string)
 import Data.Void
+import Flow ((|>))
 
 -- TYPES
 
@@ -29,241 +30,99 @@ data Meta = Meta { begin :: Int, end :: Int, index :: Int} deriving(Show)
 
 incrementIndex :: Int -> L0Token -> L0Token
 incrementIndex k token =
-    case token of 
-        LB meta -> LB (incrementMeta k meta)
-        RB meta -> RB (incrementMeta k meta)
-        S txt meta -> S txt (incrementMeta k meta)
-        W txt meta -> W txt (incrementMeta k meta)
-        MathToken meta -> MathToken (incrementMeta k meta)
-        BracketedMath txt meta ->  BracketedMath txt (incrementMeta k meta)
-        CodeToken meta -> CodeToken (incrementMeta k meta)
+  changeMeta (incrementMeta k) token
 
 incrementMeta :: Int -> Meta -> Meta
-incrementMeta k meta = 
-    meta{index = k + index meta}
-
-
--- changeTokenIndicesFrom : Int -> Int -> List Token -> List Token
--- changeTokenIndicesFrom from delta tokens =
---     let
---         f : Token -> Token
---         f token =
---             let
---                 k =
---                     indexOf token
---             in
---             if k >= from then
---                 setIndex (k + delta) token
-
---             else
---                 token
---     in
---     List.map (\token -> f token) tokens
-
-
--- indexOf : Token -> Int
--- indexOf token =
---     case token of
---         LB meta ->
---             meta.index
-
---         RB meta ->
---             meta.index
-
---         S _ meta ->
---             meta.index
-
---         W _ meta ->
---             meta.index
-
---         MathToken meta ->
---             meta.index
-
---         BracketedMath _ meta ->
---             meta.index
-
---         CodeToken meta ->
---             meta.index
-
---         TokenError _ meta ->
---             meta.index
-
-
--- setIndex : Int -> Token -> Token
--- setIndex k token =
---     case token of
---         LB meta ->
---             LB { meta | index = k }
-
---         RB meta ->
---             RB { meta | index = k }
-
---         S str meta ->
---             S str { meta | index = k }
-
---         W str meta ->
---             W str { meta | index = k }
-
---         MathToken meta ->
---             MathToken { meta | index = k }
-
---         BracketedMath str meta ->
---             BracketedMath str { meta | index = k }
-
---         CodeToken meta ->
---             CodeToken { meta | index = k }
-
---         TokenError list meta ->
---             TokenError list { meta | index = k }
-
-
--- type alias Meta =
---     { begin : Int, end : Int, index : Int }
-
-
--- type alias State a =
---     { source : String
---     , scanpointer : Int
---     , tokenIndex : Int
---     , sourceLength : Int
---     , tokens : List a
---     , currentToken : Maybe Token
---     , mode : Mode
---     }
-
-
--- type Mode
---     = Normal
---     | InMath
---     | InCode
-
-
--- type TokenType
---     = TLB
---     | TRB
---     | TS
---     | TW
---     | TMath
---     | TBracketedMath
---     | TCode
---     | TTokenError
-
-
--- type_ : Token -> TokenType
--- type_ token =
---     case token of
---         LB _ ->
---             TLB
-
---         RB _ ->
---             TRB
-
---         S _ _ ->
---             TS
-
---         W _ _ ->
---             TW
-
---         MathToken _ ->
---             TMath
-
---         BracketedMath _ _ ->
---             TBracketedMath
-
---         CodeToken _ ->
---             TCode
-
---         TokenError _ _ ->
---             TTokenError
-
-
--- getMeta : Token -> Meta
--- getMeta token =
---     case token of
---         LB m ->
---             m
-
---         RB m ->
---             m
-
---         S _ m ->
---             m
-
---         W _ m ->
---             m
-
---         MathToken m ->
---             m
-
---         BracketedMath _ m ->
---             m
-
---         CodeToken m ->
---             m
-
---         TokenError _ m ->
---             m
-
-
--- stringValue : Token -> String
--- stringValue token =
---     case token of
---         LB _ ->
---             "["
-
---         RB _ ->
---             "]"
-
---         S str _ ->
---             str
-
---         W str _ ->
---             str
-
---         MathToken _ ->
---             "$"
-
---         BracketedMath s _ ->
---             "\\[" ++ s ++ "\\]"
-
---         CodeToken _ ->
---             "`"
-
---         TokenError _ _ ->
---             "tokenError"
-
-
--- toString : List Token -> String
--- toString tokens =
---     List.map stringValue tokens |> String.join ""
-
-
--- length : Token -> Int
--- length token =
---     case token of
---         LB meta ->
---             meta.end - meta.begin
-
---         RB meta ->
---             meta.end - meta.begin
-
---         S _ meta ->
---             meta.end - meta.begin
-
---         MathToken meta ->
---             meta.end - meta.begin
-
---         CodeToken meta ->
---             meta.end - meta.begin
-
---         BracketedMath _ meta ->
---             meta.end - meta.begin
-
---         W _ meta ->
---             meta.end - meta.begin
-
---         TokenError _ meta ->
---             meta.end - meta.begin
+incrementMeta k meta = meta{index = k + (index meta)}
+  
+changeMeta :: (Meta -> Meta) -> L0Token -> L0Token
+changeMeta changeMeta token =
+    case token of 
+        LB meta -> LB (changeMeta meta)
+        RB meta -> RB (changeMeta meta)
+        S txt meta -> S txt (changeMeta meta)
+        W txt meta -> W txt (changeMeta meta)
+        MathToken meta -> MathToken (changeMeta meta)
+        BracketedMath txt meta ->  BracketedMath txt (changeMeta meta)
+        CodeToken meta -> CodeToken (changeMeta meta)
+
+extractMeta :: (Meta -> a) -> L0Token -> a
+extractMeta extract token =
+    case token of 
+        LB meta -> extract meta
+        RB meta -> extract meta
+        S txt meta -> extract meta
+        W txt meta -> extract meta
+        MathToken meta -> extract meta
+        BracketedMath txt meta ->  extract meta
+        CodeToken meta -> extract meta
+
+
+setIndex :: Int -> L0Token -> L0Token
+setIndex k token = 
+    changeMeta (\meta -> meta{index = k}) token
+
+
+
+data State a =
+    State { source :: String
+    , scanpointer :: Int
+    , tokenIndex :: Int
+    , sourceLength :: Int
+    , tokens :: [a]
+    , currentToken :: Maybe a
+    , mode :: Mode
+    }
+
+
+data Mode
+    = Normal
+    | InMath
+    | InCode
+
+
+data TokenType
+    = TLB
+    | TRB
+    | TS
+    | TW
+    | TMath
+    | TBracketedMath
+    | TCode
+    | TTokenError
+
+
+type_ :: L0Token -> TokenType
+type_ token =
+    case token of 
+        LB _ -> TLB
+        RB _ -> TRB
+        S txt _ -> TS
+        W txt _ -> TW
+        MathToken _ -> TBracketedMath
+        BracketedMath _ _ ->  TBracketedMath
+        CodeToken _ -> TCode
+
+
+getMeta :: L0Token -> Meta
+getMeta token =
+    case token of 
+        LB meta -> meta
+        RB meta -> meta
+        S _ meta -> meta
+        W _ meta -> meta
+        MathToken meta -> meta
+        BracketedMath _ meta ->  meta
+        CodeToken meta -> meta
+
+
+toString :: [L0Token] -> String
+toString tokens =
+   map show tokens |> mconcat
+
+
+length :: L0Token -> Int
+length token = extractMeta (\meta -> (end meta) - (begin meta)) token
 
 
 -- init : String -> State a
@@ -460,11 +319,11 @@ codeChars =
     [ '`' ]
 
 
-pp txt = case parseMaybe (many (tokenParser_ 0 0)) txt of 
+pp start index txt = case (parseMaybe (many (tokenParser_ start index)) txt) of 
             Nothing -> Nothing
             Just tokens -> Just $ imap incrementIndex  tokens
 
--- pp =  parseMaybe (many (tokenParser_ 0 0)) 
+
 
 
 
@@ -551,12 +410,6 @@ leftBracketParser start index =
 --         satisfy (==']')
 --         return (BracketedMath (rest) (Meta { begin = start, end = start + b - a + 1, index = index }) )
         
-
-
--- 
--- textParser start index =
---     PT.text (\c -> not <| List.member c (' ' :: languageChars)) (\c -> not <| List.member c (' ' :: languageChars))
---         |> Parser.map (\data -> S data.content { begin = start, end = start + data.end - data.begin - 1, index = index })
 
 textParser :: Int -> Int -> TokenParser L0Token
 textParser start index = 
