@@ -3,7 +3,7 @@
 A start on a compiler for Scripta in Haskell.  Will be analagous to the Elm compiler for Scripta;
 will try some experiments and try to make improvements. This will take a while.
 
-See https://scripta.io  
+See https://scripta.io for the current Elm version.
 
 Progress so far:
 
