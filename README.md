@@ -7,7 +7,7 @@ This will take a while.
 
 Progress so far:
 
-- Implement parser for primitive blocks (9/4/2022)
-- Simplified tokenizer for L0 (9/6/2022)
+- Implement parser for primitive blocks (9/4/2022, 456 loc)
+- Simplified tokenizer for L0 (9/6/2022, 597 loc)
 - Start on L0 parser: [L0Token] -> [Expr] (9/7/2022, 1062 loc)
 
