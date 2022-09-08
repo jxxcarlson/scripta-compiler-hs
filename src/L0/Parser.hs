@@ -126,6 +126,9 @@ reduceStack :: State -> [Expr]
 reduceStack state =
     reduceTokens (lineNumber state) (stack state)
 
+head_ :: [a] -> Maybe a 
+head_ [] = Nothing
+head_ (first:rest) = Just first
 
 reduceTokens :: Int -> [L0Token] -> [Expr]
 reduceTokens lineNumber tokens =
@@ -137,17 +140,26 @@ reduceTokens lineNumber tokens =
         case args of
             -- The reversed token list is of the form [LB name EXPRS RB], so return [Expr name (evalList EXPRS)]
             (S name loc) : _ ->
-                [ Fun name (reduceRestOfTokens lineNumber (drop 1 args)) (boostMeta lineNumber (L0.Token.index loc) loc) ]
+                let 
+                    ws = Text.words name
+                    name_ = head_ ws |> maybe "anon" (\a -> a)
+                    txt  = Text (drop 1 ws |>  Text.unwords) dummyLocWithId
+                in 
+                if length ws <= 1 then
+                  [ Fun name_ (reduceRestOfTokens lineNumber (drop 1 args)) (boostMeta lineNumber (L0.Token.index loc) loc) ]
+                else 
+                  [ Fun name_ (txt : (reduceRestOfTokens lineNumber (drop 1 args))) (boostMeta lineNumber (L0.Token.index loc) loc) ]
+                
 
             _ ->
                 -- this happens with input of "[]"
                 [ errorMessage "[????]" ]
 
     else
-        case tokens of
-            (MathToken loc) : (S str _) : (MathToken _) : rest ->
-                Verbatim "math" str (boostMeta lineNumber (L0.Token.index loc) loc) : reduceRestOfTokens lineNumber rest
-
+        case tokens of            
+            (MathToken loc) : rest ->
+                Verbatim "math" (Token.extractMathText rest) (boostMeta lineNumber (L0.Token.index loc) loc) : []
+            
             (CodeToken loc) : (S str _) : (CodeToken _) : rest ->
                 Verbatim "code" str (boostMeta lineNumber (L0.Token.index loc) loc) : reduceRestOfTokens lineNumber rest
 

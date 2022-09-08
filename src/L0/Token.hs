@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module L0.Token (parse, prettyPrint, getIndex, getLoc, type_, TokenType(..), L0.Token.length, L0Token(..), Loc(..)) where
+module L0.Token (parse, prettyPrint, extractMathText, getIndex, getLoc, type_, TokenType(..), L0.Token.length, L0Token(..), Loc(..)) where
 import qualified Data.Text as Text 
 import Data.Text (Text) 
 import Data.List 
@@ -25,6 +25,20 @@ data L0Token
     | CodeToken Loc
     deriving (Eq, Show)
     -- | TokenError (List (DeadEnd Context Problem)) Loc
+
+
+extractMathText :: [L0Token] -> Text
+extractMathText tokens = map extractMathText_ tokens |> mconcat
+
+extractMathText_ :: L0Token -> Text
+extractMathText_ token =
+    case token of 
+        LB _ -> "["
+        RB _ -> "]"
+        S txt _ -> txt
+        W txt _ -> txt
+        MathToken _ -> ""
+        CodeToken _ -> "`"
 
 display :: L0Token -> Text
 display token = 
