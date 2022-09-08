@@ -11,4 +11,4 @@ Progress so far:
 - Simplified tokenizer for L0 (9/6/2022, 597 loc)
 - L0 parser, first draft: [L0Token] -> [Expr] (9/7/2022, 1062 loc)
 - Add Parser.ExprBlock, change Main to parse file contents to [ExprBlock], then display the result (9/8/2022, 1224 loc)
-- Add benchmarks. (9/8/2022)
+- Add benchmarks. Add infrastructure for rendering web pages (9/8/2022, 1275)
