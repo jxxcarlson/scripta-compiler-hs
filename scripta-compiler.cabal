@@ -45,7 +45,9 @@ library
   build-depends:
       QuickCheck
     , base >=4.7 && <5
+    , clock
     , containers
+    , criterion
     , flow
     , hspec
     , ilist
@@ -64,7 +66,9 @@ executable scripta-compiler-exe
   build-depends:
       QuickCheck
     , base >=4.7 && <5
+    , clock
     , containers
+    , criterion
     , flow
     , hspec
     , ilist
@@ -85,7 +89,9 @@ test-suite scripta-compiler-test
   build-depends:
       QuickCheck
     , base >=4.7 && <5
+    , clock
     , containers
+    , criterion
     , flow
     , hspec
     , ilist

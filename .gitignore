@@ -2,3 +2,9 @@
 *~
 trash/
 .vscode
+bench/Fibber
+bench/Bench
+bench/*.o
+bench/*.hi
+dist-newstyle/
+
