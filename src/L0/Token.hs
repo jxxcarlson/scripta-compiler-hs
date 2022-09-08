@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module L0.Token (parse, prettyPrint, getIndex, getLoc, type_, L0.Token.length, L0Token(..), Loc(..)) where
+module L0.Token (parse, prettyPrint, getIndex, getLoc, type_, TokenType(..), L0.Token.length, L0Token(..), Loc(..)) where
 import qualified Data.Text as Text 
 import Data.Text (Text) 
 import Data.List 
@@ -99,6 +99,7 @@ data TokenType
     | TMath
     | TCode
     | TTokenError
+    deriving(Eq, Show)
 
 
 type_ :: L0Token -> TokenType

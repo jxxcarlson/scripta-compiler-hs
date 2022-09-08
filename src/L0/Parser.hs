@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings, DuplicateRecordFields #-}
 
-module L0.Parser (nextStep) where
+module L0.Parser (run) where
 
 import qualified Data.Text as Text 
 import Data.Text (Text) 
@@ -10,11 +10,15 @@ import Data.Vector (Vector, fromList, (!?))
 import Data.Void
 import Flow ((|>))
 import Prelude hiding(id)
+import Debug.Trace
 
-import L0.Token (L0Token(..), Loc(..))
+import L0.Token (L0Token(..), Loc(..), TokenType(..))
 import qualified L0.Token as Token
 import Parser.Expr(Expr(..))
 import Parser.Meta(Meta(..))
+import L0.Match as M
+import L0.Symbol
+import qualified L0.Match as Match
 
 
 
@@ -29,9 +33,34 @@ data State =
     , lineNumber :: Int
     }
 
+instance Show State where
+  show state = 
+    show (stack state)
+
+
+
+xlog :: Show a => String -> a -> a
+xlog msg a = Debug.Trace.trace (msg <> ": " <> show a) a
+
+
+
 data Step state a
     = Loop state
     | Done a
+
+loop :: state -> (state -> Step state a) -> a
+loop s f =
+    case f s of
+        Loop s_ -> loop s_ f
+        Done b -> b
+
+run :: Int ->  Text -> [Expr]
+run k txt = 
+    case Token.parse 0 0 txt of 
+        Nothing -> []
+        Just tokens_ -> 
+           loop (initWithTokens k tokens_)  nextStep |> committed
+
 
 initWithTokens :: Int -> [L0Token] -> State
 initWithTokens lineNumber_ tokens_ =
@@ -62,7 +91,8 @@ nextStep state =
                 |> advanceTokenIndex
                 |> pushOrCommit token
                 |> reduceState
-                |> (\st -> State { step = 1 + step st })
+                |> xlog "Stack"
+                -- |> (\st -> State { step = 1 + step st })
                 |> Loop
 
 getToken :: State -> Maybe L0Token
@@ -78,8 +108,93 @@ advanceTokenIndex state = state {tokenIndex = 1 + (tokenIndex state)}
 recoverFromError :: State -> Step State State
 recoverFromError state = Done state
 
+
 reduceState :: State -> State
-reduceState state = state
+reduceState state =
+    if tokensAreReducible state then
+        state {stack = [], committed = reduceStack state ++ (committed state)}
+
+    else
+        state
+
+
+tokensAreReducible state =
+    M.isReducible (stack state |> L0.Symbol.toSymbols |> xlog "Symbols") |> xlog "Reducible"
+
+
+reduceStack :: State -> [Expr]
+reduceStack state =
+    reduceTokens (lineNumber state) (stack state)
+
+
+reduceTokens :: Int -> [L0Token] -> [Expr]
+reduceTokens lineNumber tokens =
+    if isExpr tokens then
+        let
+            args =
+                unbracket tokens
+        in
+        case args of
+            -- The reversed token list is of the form [LB name EXPRS RB], so return [Expr name (evalList EXPRS)]
+            (S name loc) : _ ->
+                [ Fun name (reduceRestOfTokens lineNumber (drop 1 args)) (boostMeta lineNumber (L0.Token.index loc) loc) ]
+
+            _ ->
+                -- this happens with input of "[]"
+                [ errorMessage "[????]" ]
+
+    else
+        case tokens of
+            (MathToken loc) : (S str _) : (MathToken _) : rest ->
+                Verbatim "math" str (boostMeta lineNumber (L0.Token.index loc) loc) : reduceRestOfTokens lineNumber rest
+
+            (CodeToken loc) : (S str _) : (CodeToken _) : rest ->
+                Verbatim "code" str (boostMeta lineNumber (L0.Token.index loc) loc) : reduceRestOfTokens lineNumber rest
+
+            _ ->
+                [ errorMessage "[????]" ]
+
+
+reduceRestOfTokens :: Int -> [L0Token] -> [Expr]
+reduceRestOfTokens lineNumber tokens =
+    case tokens of
+        (LB _) : _ ->
+            case splitTokens tokens of
+                Nothing ->
+                    [ errorMessageInvisible "Error on match", Text "error on match" dummyLocWithId ]
+
+                Just ( a, b ) ->
+                    reduceTokens lineNumber a ++ reduceRestOfTokens lineNumber b
+
+        (MathToken _) : _ ->
+            let
+                ( a, b ) =
+                    splitTokensWithSegment tokens
+            in
+            reduceTokens lineNumber a ++ reduceRestOfTokens lineNumber b
+
+        (CodeToken _) : _ ->
+            let
+                ( a, b ) =
+                    splitTokensWithSegment tokens
+            in
+            reduceTokens lineNumber a ++ reduceRestOfTokens lineNumber b
+
+        (S str meta) : _ ->
+            Text str (boostMeta 0 (Token.getIndex (S str meta)) meta) : reduceRestOfTokens lineNumber (drop 1 tokens)
+
+        token : _ ->
+            case stringTokenToExpr token of
+                Just expr ->
+                    expr : reduceRestOfTokens lineNumber (drop 1 tokens)
+
+                Nothing ->
+                    [ errorMessage ("Line " <> (Text.pack $ show lineNumber) <> ", error converting token"), Text "error converting Token" dummyLocWithId ]
+
+        _ ->
+            []
+
+
 
 pushOrCommit :: L0Token -> State -> State
 pushOrCommit token state =
@@ -152,3 +267,56 @@ boostMeta lineNumber tokenIndex loc =
 makeId :: Int -> Int -> Text
 makeId a b =
     (Text.pack $ show a) <> "." <> (Text.pack $ show b)
+
+
+
+{-| remove first and last token
+-}
+unbracket :: [a] -> [a]
+unbracket list =
+    drop 1 (take ((length list) - 1) list)
+
+
+{-| areBracketed tokens == True iff tokens are derived from "[ ... ]"
+-}
+isExpr :: [L0Token] -> Bool
+isExpr tokens =
+    map Token.type_ (take 1 tokens)
+        == [ TLB ]
+        && map Token.type_ (take 1 (reverse tokens))
+        == [ TRB ]
+
+errorMessage :: Text -> Expr
+errorMessage message =
+    Fun "errorHighlight" [ Text message dummyLocWithId ] dummyLocWithId
+
+
+errorMessageInvisible :: Text -> Expr
+errorMessageInvisible message =
+    Fun "invisible" [ Text message dummyLocWithId ] dummyLocWithId
+
+
+dummyLocWithId :: Meta
+dummyLocWithId =
+    Meta { begin = 0, end = 0, index = dummyTokenIndex, id = "dummy (2)" }
+
+dummyTokenIndex = 0
+
+splitTokens :: [L0Token] -> Maybe ( [L0Token], [L0Token] )
+splitTokens tokens =
+    case M.match (L0.Symbol.toSymbols tokens) of
+        Nothing ->
+            Nothing
+
+        Just k ->
+            Just (M.splitAt (k + 1) tokens)
+
+splitTokensWithSegment :: [L0Token] -> ( [L0Token], [L0Token] )
+splitTokensWithSegment tokens =
+    M.splitAt (segLength tokens + 1) tokens
+
+
+segLength :: [L0Token] -> Int
+segLength tokens =
+    M.getSegment M (tokens |> L0.Symbol.toSymbols) |> length
+

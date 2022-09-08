@@ -16,9 +16,10 @@
 module Parser.PrimitiveBlock (PrimitiveBlock, content, checkPosition, lineNumber, position, cleanArgs, empty, parse, displayBlocks) where
 
 
-import qualified Data.Text as Text
+
 import qualified Data.Text.IO as TIO
 import Data.Text (Text)
+import qualified Data.Text as Text
 import Data.Map (Map)
 import qualified Data.List
 import qualified Data.Map as Map
