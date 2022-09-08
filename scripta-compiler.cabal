@@ -36,6 +36,8 @@ library
       Parser.Line
       Parser.Meta
       Parser.PrimitiveBlock
+      Render.Block
+      Render.Html
       Scripta
   other-modules:
       Paths_scripta_compiler
@@ -45,7 +47,7 @@ library
   build-depends:
       QuickCheck
     , base >=4.7 && <5
-    , clock
+    , blaze-html
     , containers
     , criterion
     , flow
@@ -66,7 +68,7 @@ executable scripta-compiler-exe
   build-depends:
       QuickCheck
     , base >=4.7 && <5
-    , clock
+    , blaze-html
     , containers
     , criterion
     , flow
@@ -89,7 +91,7 @@ test-suite scripta-compiler-test
   build-depends:
       QuickCheck
     , base >=4.7 && <5
-    , clock
+    , blaze-html
     , containers
     , criterion
     , flow

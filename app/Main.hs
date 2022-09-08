@@ -11,12 +11,21 @@ import Parser.PrimitiveBlock as PrimitiveBlock
 import Parser.Language(Language(..))
 import qualified Parser.ExprBlock
 import qualified Scripta
+import qualified Render.Block
 
 
 main :: IO ()
 main = 
- Main.parse
-            
+ Main.compileToHtml
+
+
+compileToHtml =             
+  do
+   [fname] <- getArgs
+   text <- TIO.readFile fname
+   let blocks = Scripta.compile text
+   putStrLn $ Render.Block.render blocks
+ 
 
 parse =
    do

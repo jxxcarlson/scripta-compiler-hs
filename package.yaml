@@ -30,7 +30,7 @@ dependencies:
 - QuickCheck
 - vector
 - criterion
-- clock
+- blaze-html
 
 
 ghc-options:

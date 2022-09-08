@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings, DuplicateRecordFields #-}
 
-module Parser.ExprBlock (ExprBlock(..), toExpressionBlock, Parser.ExprBlock.displayBlocks) where
+module Parser.ExprBlock (ExprBlock(..),BlockType(..), toExpressionBlock, Parser.ExprBlock.displayBlocks) where
 
 
 import qualified Data.Text.IO as TIO
