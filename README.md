@@ -1,9 +1,9 @@
 # scripta-compiler-hs
 
-A start on a compiler for Scripta in Haskell.  Will be analagous to the Elm compiler for Scripta.  
-See https://scripta.io
+A start on a compiler for Scripta in Haskell.  Will be analagous to the Elm compiler for Scripta;
+will try some experiments and try to make improvements. This will take a while.
 
-This will take a while.  
+See https://scripta.io  
 
 Progress so far:
 
