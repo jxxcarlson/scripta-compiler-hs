@@ -9,18 +9,32 @@ import qualified Data.Text.IO as TIO
 
 import Parser.PrimitiveBlock as PrimitiveBlock
 import Parser.Language(Language(..))
+import qualified Parser.ExprBlock
+import qualified Scripta
 
 
 main :: IO ()
 main = 
- do
+ Main.parse
+            
+
+parse =
+   do
+   [fname] <- getArgs
+   text <- TIO.readFile fname
+   let blocks = Scripta.compile text
+   putStrLn "\nBlocks:\n================="
+   TIO.putStrLn $ Parser.ExprBlock.displayBlocks blocks
+   putStrLn "================="
+
+parsePrimitiveBlocks =
+   do
    [fname] <- getArgs
    text <- TIO.readFile fname
    let blocks = PrimitiveBlock.parse L0Lang (\_ -> True) (T.lines text )  |> filter (\b -> PrimitiveBlock.content b /= [T.pack ""])
    putStrLn "\nPrimitive blocks:\n================="
    TIO.putStrLn $ displayBlocks blocks
    putStrLn "================="
-            
 
 
 -- putStr "\nEnter a string: "

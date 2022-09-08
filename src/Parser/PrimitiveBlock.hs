@@ -13,7 +13,7 @@
 -- https://hspec.github.io/
 -- https://www.youtube.com/watch?v=PGsDvgmZF7A
 
-module Parser.PrimitiveBlock (PrimitiveBlock, content, checkPosition, lineNumber, position, cleanArgs, empty, parse, displayBlocks) where
+module Parser.PrimitiveBlock (PrimitiveBlock(..), content, checkPosition, lineNumber, position, cleanArgs, empty, parse, displayBlocks) where
 
 
 
@@ -544,7 +544,7 @@ dropLast txt =
 
 data KVStatus = KVInKey | KVInValue
 
--- DISPLAY PRIMITIVEBLOXK
+-- DISPLAY PRIMITIVEBLOCK
 
 displayName :: PrimitiveBlock -> Text
 displayName block = 
