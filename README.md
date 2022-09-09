@@ -1,14 +1,14 @@
 # scripta-compiler-hs
 
-A start on a compiler for Scripta in Haskell.  Will be analagous to the Elm compiler for Scripta;
-will try some experiments and try to make improvements. This will take a while.
+A start on a compiler for Scripta in Haskell — analagous to the Elm compiler for Scripta;
+This will take a while.
 
 The ultimate
 goal is to build a desktop version of scripta: integrated editor + Scripta compiler.
 Possibly using monomer: https://github.com/fjvallarino/monomer.  This will have to
-wait until ghc 9.2.4 builds on my M1 laptop.  Aargh!
+wait until ghc 9.2.4 builds on my M1 laptop under stack.  Aargh!
 
-See https://scripta.io for the current Elm (web) version.
+See https://scripta.io for the current web version (Elm + Lamdera).
 
 Progress so far:
 
