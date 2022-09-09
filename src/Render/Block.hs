@@ -110,13 +110,21 @@ renderImage block =
         w = case Map.lookup "width" (properties block) of 
             Nothing -> "400"
             Just w -> w
+
         claas = case Map.lookup "position" (properties block) of 
             Just "center" -> "center"
             _ -> "foo"
+
+        caption = case Map.lookup "caption" (properties block) of 
+            Nothing -> ""
+            Just caption_ -> caption_
+
         url = textValue $ verbatimContent block
 
     in
-    img ! A.src url ! A.width (textValue w) ! A.class_ claas 
+    H.div $ do
+        img ! A.src url ! A.width (textValue w) ! A.class_ claas
+        p ! A.class_ claas $ toHtml caption
            
 verbatimContent :: ExprBlock -> Text
 verbatimContent block = 
