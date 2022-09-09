@@ -29,6 +29,7 @@ library
       L0.Parser
       L0.Symbol
       L0.Token
+      Log
       Parser.Base
       Parser.Expr
       Parser.ExprBlock

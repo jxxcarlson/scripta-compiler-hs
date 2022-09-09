@@ -13,7 +13,7 @@
 -- https://hspec.github.io/
 -- https://www.youtube.com/watch?v=PGsDvgmZF7A
 
-module Parser.PrimitiveBlock (PrimitiveBlock(..), content, checkPosition, lineNumber, position, cleanArgs, empty, parse, displayBlocks) where
+module Parser.PrimitiveBlock (PrimitiveBlock(..), args, content, checkPosition, lineNumber, position, cleanArgs, empty, parse, displayBlocks) where
 
 
 

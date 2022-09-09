@@ -12,7 +12,7 @@ import qualified Data.List
 import qualified Data.Map as Map
 import Prelude hiding(init)
 import Flow ((|>))
-import Debug.Trace
+import qualified Log
 
 import Parser.PrimitiveBlock
 import Parser.Line (PrimitiveBlockType(..)) 
@@ -59,7 +59,7 @@ toExpressionBlock pb =
     in
     ExprBlock
         { name = Parser.PrimitiveBlock.name pb
-        , args = Parser.PrimitiveBlock.args pb
+        , args = Parser.PrimitiveBlock.args pb |> Log.xlog "ARGS (1)"
         , properties = Map.empty
         , indent = Parser.PrimitiveBlock.indent pb
         , lineNumber = Parser.PrimitiveBlock.lineNumber pb

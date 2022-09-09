@@ -13,6 +13,8 @@ import Data.Text (Text)
 import qualified Data.Text as Text
 import Data.Map (Map)
 import qualified Data.Map as Map
+import Flow ((|>))
+import qualified Log (xlog)
 
 import Parser.ExprBlock (ExprBlock(..), BlockType(..))
 import Parser.Expr(Expr(..))
@@ -76,12 +78,15 @@ renderOrdinaryBlock :: [Text] -> ExprBlock -> Html
 renderOrdinaryBlock args block  =  
     case (Parser.ExprBlock.name block) of 
         Nothing -> p "Ordinary block: error (no name)" 
-        Just "section" -> 
-            h1 $ renderContent (Parser.ExprBlock.content block)
-            -- case args !! 0 of 
-            --     "1" -> h1 $ renderContent (Parser.ExprBlock.content block)
-            --     "2" -> h2 $ renderContent (Parser.ExprBlock.content block)
-            --     _  -> h3 $ renderContent (Parser.ExprBlock.content block)
+        Just "section" ->  
+            case (head_ (Parser.ExprBlock.args block) |> Log.xlog "!! ARGS" |> fmap Text.strip) of 
+                Nothing -> h1 $ renderContent (Parser.ExprBlock.content block) 
+                Just "1" -> h1 $ renderContent (Parser.ExprBlock.content block) 
+                Just "2" -> h2 $ renderContent (Parser.ExprBlock.content block) 
+                Just "3" -> h3 $ renderContent (Parser.ExprBlock.content block) 
+                Just "4" -> h4 $ renderContent (Parser.ExprBlock.content block)
+                Just _ ->   h5 $ renderContent (Parser.ExprBlock.content block)    
+           
 
         Just name ->  p $ toHtml $ "Error: ordinary block for " <> name <> " not implemented"
          
@@ -100,3 +105,7 @@ verbatimContent block =
     case (Parser.ExprBlock.content block) of 
         Left txt -> txt
         Right _ -> ""
+
+head_ :: [a] -> Maybe a 
+head_ [] = Nothing
+head_ (first:rest)  = Just first
