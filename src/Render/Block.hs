@@ -3,6 +3,8 @@
 module Render.Block (render, renderSpan) where 
 
     -- view-source:https://sixthform.info/katex/guide.html
+    -- https://gdevanla.github.io/posts/read-you-a-blaze.html
+    -- https://mmhaskell.com/blog/2020/3/9/blaze-lightweight-html-generation
 
 import Control.Monad (forM_)
 import Text.Blaze.Html5 as H
@@ -34,8 +36,8 @@ render_ :: ExprBlock -> Html
 render_ block = 
     case Parser.ExprBlock.blockType block of 
         Paragraph -> renderContent (Parser.ExprBlock.content block)
-        OrdinaryBlock args -> renderOrdinaryBlock args block
-        VerbatimBlock args -> renderVerbatimBlock args block
+        OrdinaryBlock args -> renderOrdinaryBlock block
+        VerbatimBlock args -> renderVerbatimBlock block
 
 renderContent :: Either Text [Expr] -> Html
 renderContent input = 
@@ -74,8 +76,8 @@ functionDict = Map.fromList [
 renderSpan style_ exprs = 
     H.span ! (A.style style_)  $ (toHtml $ Prelude.map renderExpr exprs)
 
-renderOrdinaryBlock :: [Text] -> ExprBlock -> Html
-renderOrdinaryBlock args block  =  
+renderOrdinaryBlock :: ExprBlock -> Html
+renderOrdinaryBlock block  =  
     case (Parser.ExprBlock.name block) of 
         Nothing -> p "Ordinary block: error (no name)" 
         Just "section" ->  
@@ -91,14 +93,30 @@ renderOrdinaryBlock args block  =
         Just name ->  p $ toHtml $ "Error: ordinary block for " <> name <> " not implemented"
          
 
-renderVerbatimBlock :: [Text] -> ExprBlock -> Html
-renderVerbatimBlock args block  = 
+renderVerbatimBlock :: ExprBlock -> Html
+renderVerbatimBlock block  = 
     case (Parser.ExprBlock.name block) of 
         Nothing -> p "Error: a verbatim block cannot be anonymous" 
         Just "equation" -> p $ toHtml $ "\\["  <> verbatimContent block <> "\\]"
         Just "math" -> p $ toHtml $ "\\["  <> verbatimContent block <> "\\]"
+        Just "image" -> renderImage block
         Just name ->  p $ toHtml $ "Error: verbatim block for " <> name <> " not implemented"
 
+birdUrl :: AttributeValue
+birdUrl = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQCE2i4ctUkAD6x8p9EK2QyQobseDGta40fHg&usqp=CAU"
+
+renderImage block = 
+    let 
+        w = case Map.lookup "width" (properties block) of 
+            Nothing -> "400"
+            Just w -> w
+        claas = case Map.lookup "position" (properties block) of 
+            Just "center" -> "center"
+            _ -> "foo"
+        url = textValue $ verbatimContent block
+
+    in
+    img ! A.src url ! A.width (textValue w) ! A.class_ claas     
 
 verbatimContent :: ExprBlock -> Text
 verbatimContent block = 

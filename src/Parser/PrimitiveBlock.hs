@@ -9,9 +9,15 @@
 
 -- TESTING
 -- https://mmhaskell.com/testing
+-- https://mmhaskell.com/testing/test-driven-development
 -- @av: use hspec
 -- https://hspec.github.io/
 -- https://www.youtube.com/watch?v=PGsDvgmZF7A
+-- https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/overloaded_record_dot.html
+-- https://pure-hack.com/posts/overloaded-labels-in-haskell/
+-- https://typeclasses.com/ghc/no-implicit-prelude
+
+-- https://jakewheat.github.io/intro_to_parsing/#very-simple-expression-parsing
 
 module Parser.PrimitiveBlock (PrimitiveBlock(..), args, content, checkPosition, lineNumber, position, cleanArgs, empty, parse, displayBlocks) where
 

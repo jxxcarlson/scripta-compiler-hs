@@ -2,6 +2,9 @@
       
 import Criterion.Main 
 
+-- http://www.serpentine.com/criterion/tutorial.html
+-- https://mmhaskell.com/testing/profiling
+
 import Data.Text (Text)
 import qualified Data.Text as Text
 import Parser.Language(Language(..))

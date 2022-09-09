@@ -14,3 +14,6 @@ Math
 
 $$
 \int_0^\infty e^{-x} dx = 1
+
+|| image width:600 position:center caption:Yellow bird
+https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQCE2i4ctUkAD6x8p9EK2QyQobseDGta40fHg&usqp=CAU
