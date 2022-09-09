@@ -17,12 +17,18 @@ import qualified Render.Block
 
 main :: IO ()
 main = 
- Main.compileToHtml
+  do 
+    [prog, fname] <- getArgs
+    case prog of 
+      "html" ->  Main.compileToHtml fname
+      "pb"   ->  Main.parsePrimitiveBlocks fname
+      "expr" -> Main.parse fname
+      _ -> putStrLn "unknown subcommand"
 
 
-compileToHtml =             
-  do
-   [fname] <- getArgs
+
+compileToHtml fname =             
+  do 
    text <- TIO.readFile fname
    let blocks = Scripta.compile text
    putStrLn $ header <> Render.Block.render blocks
@@ -37,18 +43,16 @@ header =
    in 
    [header1, header2, header3, header4] |> Data.List.intercalate "\n\n"
 
-parse =
+parse fname =
    do
-   [fname] <- getArgs
    text <- TIO.readFile fname
    let blocks = Scripta.compile text
    putStrLn "\nBlocks:\n================="
    TIO.putStrLn $ Parser.ExprBlock.displayBlocks blocks
    putStrLn "================="
 
-parsePrimitiveBlocks =
+parsePrimitiveBlocks fname =
    do
-   [fname] <- getArgs
    text <- TIO.readFile fname
    let blocks = PrimitiveBlock.parse L0Lang (\_ -> True) (T.lines text )  |> filter (\b -> PrimitiveBlock.content b /= [T.pack ""])
    putStrLn "\nPrimitive blocks:\n================="

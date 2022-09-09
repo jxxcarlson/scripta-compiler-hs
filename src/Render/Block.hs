@@ -73,7 +73,30 @@ renderSpan style_ exprs =
     H.span ! (A.style style_)  $ (toHtml $ Prelude.map renderExpr exprs)
 
 renderOrdinaryBlock :: [Text] -> ExprBlock -> Html
-renderOrdinaryBlock args block  =   p "Ordinary block: rendering not implemented"  
+renderOrdinaryBlock args block  =  
+    case (Parser.ExprBlock.name block) of 
+        Nothing -> p "Ordinary block: error (no name)" 
+        Just "section" -> 
+            h1 $ renderContent (Parser.ExprBlock.content block)
+            -- case args !! 0 of 
+            --     "1" -> h1 $ renderContent (Parser.ExprBlock.content block)
+            --     "2" -> h2 $ renderContent (Parser.ExprBlock.content block)
+            --     _  -> h3 $ renderContent (Parser.ExprBlock.content block)
+
+        Just name ->  p $ toHtml $ "Error: ordinary block for " <> name <> " not implemented"
+         
 
 renderVerbatimBlock :: [Text] -> ExprBlock -> Html
-renderVerbatimBlock args block  =   p "Verbatim block: rendering not implemented"  
+renderVerbatimBlock args block  = 
+    case (Parser.ExprBlock.name block) of 
+        Nothing -> p "Error: a verbatim block cannot be anonymous" 
+        Just "equation" -> p $ toHtml $ "\\["  <> verbatimContent block <> "\\]"
+        Just "math" -> p $ toHtml $ "\\["  <> verbatimContent block <> "\\]"
+        Just name ->  p $ toHtml $ "Error: verbatim block for " <> name <> " not implemented"
+
+
+verbatimContent :: ExprBlock -> Text
+verbatimContent block = 
+    case (Parser.ExprBlock.content block) of 
+        Left txt -> txt
+        Right _ -> ""
