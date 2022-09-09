@@ -3,7 +3,12 @@
 A start on a compiler for Scripta in Haskell.  Will be analagous to the Elm compiler for Scripta;
 will try some experiments and try to make improvements. This will take a while.
 
-See https://scripta.io for the current Elm version.
+The ultimate
+goal is to build a desktop version of scripta: integrated editor + Scripta compiler.
+Possibly using monomer: https://github.com/fjvallarino/monomer.  This will have to
+wait until ghc 9.2.4 builds on my M1 laptop.  Aargh!
+
+See https://scripta.io for the current Elm (web) version.
 
 Progress so far:
 
@@ -12,4 +17,4 @@ Progress so far:
 - L0 parser, first draft: [L0Token] -> [Expr] (9/7/2022, 1062 loc)
 - Add Parser.ExprBlock, change Main to parse file contents to [ExprBlock], then display the result (9/8/2022, 1224 loc)
 - Add benchmarks. Add infrastructure for rendering web pages. (9/8/2022, 1270 loc)
-- Limited rendering (text, i and b elements, math text $ .. $) (9/8/2022, 1291 loc)
+- Limited rendering (text, i, b, red, blue and highlight elements, math text $ .. $ using KaTeX) (9/8/2022, 1291 loc)
