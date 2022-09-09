@@ -116,8 +116,8 @@ renderImage block =
         url = textValue $ verbatimContent block
 
     in
-    img ! A.src url ! A.width (textValue w) ! A.class_ claas     
-
+    img ! A.src url ! A.width (textValue w) ! A.class_ claas 
+           
 verbatimContent :: ExprBlock -> Text
 verbatimContent block = 
     case (Parser.ExprBlock.content block) of 

@@ -60,7 +60,7 @@ toExpressionBlock pb =
     ExprBlock
         { name = Parser.PrimitiveBlock.name pb
         , args = Parser.PrimitiveBlock.args pb |> Log.xlog "ARGS (1)"
-        , properties = Map.empty
+        , properties = Parser.PrimitiveBlock.properties pb
         , indent = Parser.PrimitiveBlock.indent pb
         , lineNumber = Parser.PrimitiveBlock.lineNumber pb
         , numberOfLines = length linesOfText
@@ -103,10 +103,10 @@ displayIndentation block =
     ["indent:", (Text.pack . show) (Parser.ExprBlock.indent block)] |> Text.unwords
 
 
-displayDict :: ExprBlock -> Text 
-displayDict block = 
+displayProperties :: ExprBlock -> Text 
+displayProperties block = 
     -- ["dict:", (dict block) |> Map.toList  |> map yazzle  |> Text.unwords] |> Text.unwords
-    ["properties:", (properties block) |> Map.toList |> map yazzle  |> Text.intercalate ", "] |> Text.unwords
+    ["properties:", (Parser.ExprBlock.properties block) |> Map.toList |> map yazzle  |> Text.intercalate ", "] |> Text.unwords
 
 yazzle :: (Text, Text)  -> Text
 yazzle (a, b) =
@@ -120,7 +120,7 @@ displayBlock block =
       : displayIndentation block 
       : displayName block 
       : displayArgs block 
-      : displayDict block 
+      : displayProperties block 
       :  "------" 
       : [displayContent $ block] 
 

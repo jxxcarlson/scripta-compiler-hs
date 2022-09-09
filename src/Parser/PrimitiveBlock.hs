@@ -69,7 +69,7 @@ import Parser.Language (Language(..))
         indent: 0
         name: section
         args:, 1
-        dict: foo: bar, yada: a b c
+        properties: foo: bar, yada: a b c
         ------
         Introduction
 
@@ -79,7 +79,7 @@ import Parser.Language (Language(..))
         indent: 0
         name: anon
         args:
-        dict:
+        properties:
         ------
         blah blah blah ...
         etc.
@@ -90,7 +90,7 @@ import Parser.Language (Language(..))
         indent: 2
         name: anon
         args:
-        dict:
+        properties:
         ------
         abc
         def
@@ -101,7 +101,7 @@ import Parser.Language (Language(..))
         indent: 0
         name: image
         args:, 71, 46
-        dict: caption: Primitive Steam Engine, width: 300
+        properties: caption: Primitive Steam Engine, width: 300
         ------
         https://techmuseum.org/steam-engine.png
 
@@ -122,12 +122,12 @@ import Parser.Language (Language(..))
         2 3 5 width:300 caption:Steam Engine
 
     has positional args 2 3 5 and names args 'width' and 'caption'.  This line would 
-    results in the fields args and dict of a PrimitiveBlock:
+    results in the fields args and properties of a PrimitiveBlock:
         
         args = ["2", "3", "5"]
-        dict = Map.fromList [("width", ["300"]), ("caption", ["Steam", "Engine"])]
+        properties = Map.fromList [("width", ["300"]), ("caption", ["Steam", "Engine"])]
 
-    Thus positional args are retained while named args are installed in the 'dict'
+    Thus positional args are retained while named args are installed in the 'properties'
     field as key-value pairs, where the value is a list of words.
 
     The position field indicates the position of the first character of a block on the source text.
@@ -143,7 +143,7 @@ data PrimitiveBlock = PrimitiveBlock
     , lineNumber :: Int
     , position  :: Int
     , args :: [Text]
-    , dict :: Map Text [Text]
+    , properties :: Map Text Text
     , content  :: [Text]
     , name  :: Maybe Text
     , blockType  :: PrimitiveBlockType
@@ -160,7 +160,7 @@ empty =
     , content = []
     , name = Nothing
     , args = []
-    , dict = Map.fromList []
+    , properties = Map.fromList []
     , sourceText = ""
     , blockType = PBParagraph
     }
@@ -363,7 +363,7 @@ blockFromLine lang_ line =
     , content =  [Line.content line] 
     , name = Nothing
     , args = []
-    , dict = Map.empty
+    , properties = Map.empty
     , sourceText = ""
     , blockType = Line.getBlockType lang_ (Line.content line)
     }
@@ -383,7 +383,7 @@ elaborate line pb =
                 PBVerbatim -> Parser.PrimitiveBlock.content pb |> drop 1 |> map Text.strip
 
     in
-    pb{ content = content, name = name_, args = cleanArgs args_, dict = args_ |> prepareList |> prepareKVData }
+    pb{ content = content, name = name_, args = cleanArgs args_, properties = args_ |> prepareList |> prepareKVData }
 
 
 addCurrentLine :: Int ->  Line ->  State -> State
@@ -459,8 +459,8 @@ data KVState = KVState { input :: [Text], kvList :: [(Text, [Text])], currentKey
 {-
 
     ghci> dd = ["a:", "1", "2", "3", "b:", "XYX", "c:", "U", "V"] |> map Text.pack
-    ghci> dict = prepareKVData dd
-    ghci> Map.lookup (Text.pack "c") dict
+    ghci> properties = prepareKVData dd
+    ghci> Map.lookup (Text.pack "c") properties
     Just ["U","V"]
 
 -}
@@ -477,7 +477,7 @@ findChar c txt =
         Nothing -> False
         Just _ -> True
 
-prepareKVData :: [Text] -> (Map Text [Text])
+prepareKVData :: [Text] -> (Map Text Text)
 prepareKVData data_ =
     let 
         initialState = KVState {input = data_, kvList = [], currentKey = Nothing, currentValue = [], kvStatus = KVInKey}
@@ -485,7 +485,7 @@ prepareKVData data_ =
     loop initialState nextKVStep
 
 
-nextKVStep ::  KVState -> Step (KVState) (Map Text [Text])
+nextKVStep ::  KVState -> Step (KVState) (Map Text Text)
 nextKVStep state = 
     case  Data.List.uncons $ (input state) of 
         Nothing -> 
@@ -496,7 +496,7 @@ nextKVStep state =
                     Just key -> (key, (currentValue state)): (kvList state) 
                         |> map (\(k, v) -> (k, Data.List.reverse v))
             in
-            Done (Map.fromList kvList')
+            Done (Map.fromList (map (\(k,v) -> (k, Text.unwords v)) kvList'))
         Just (item, rest) ->
             case kvStatus state of
                 KVInKey -> 
@@ -574,12 +574,12 @@ displayIndentation block =
 
 displayDict :: PrimitiveBlock -> Text 
 displayDict block = 
-    -- ["dict:", (dict block) |> Map.toList  |> map yazzle  |> Text.unwords] |> Text.unwords
-    ["dict:", (dict block) |> Map.toList |> map yazzle  |> Text.intercalate ", "] |> Text.unwords
+    -- ["properties:", (properties block) |> Map.toList  |> map yazzle  |> Text.unwords] |> Text.unwords
+    ["properties:", (properties block) |> Map.toList |> map yazzle  |> Text.intercalate ", "] |> Text.unwords
 
-yazzle :: (Text, [Text])  -> Text
-yazzle (txt, txtList) =
-    [txt <> ":", Text.unwords txtList] |> Text.unwords
+yazzle :: (Text, Text)  -> Text
+yazzle (txt, val) =
+    txt <> ": " <> val
 
 
 displayBlock :: PrimitiveBlock -> Text
