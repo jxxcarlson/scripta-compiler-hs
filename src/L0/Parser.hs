@@ -91,7 +91,7 @@ nextStep state =
                 |> advanceTokenIndex
                 |> pushOrCommit token
                 |> reduceState
-                |> xlog "Stack"
+                -- |> xlog "Stack"
                 -- |> (\st -> State { step = 1 + step st })
                 |> Loop
 
@@ -119,7 +119,11 @@ reduceState state =
 
 
 tokensAreReducible state =
-    M.isReducible (stack state |> L0.Symbol.toSymbols |> xlog "Symbols") |> xlog "Reducible"
+    M.isReducible (stack state 
+      |> L0.Symbol.toSymbols 
+      -- |> xlog "Symbols"
+      )
+     --  |> xlog "Reducible"
 
 
 reduceStack :: State -> [Expr]

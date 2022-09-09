@@ -1,4 +1,4 @@
-This [b is] a test.
+This [i [b is]] a test.
 I repeat: [i a test].
 
 Pythagoras sez: $a^2 + b^2 = c^2$.  [red Cool!]

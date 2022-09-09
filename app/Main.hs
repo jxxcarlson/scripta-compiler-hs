@@ -6,6 +6,7 @@ import System.Environment
 import Flow ((|>))
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
+import qualified Data.List
 
 import Parser.PrimitiveBlock as PrimitiveBlock
 import Parser.Language(Language(..))
@@ -24,8 +25,17 @@ compileToHtml =
    [fname] <- getArgs
    text <- TIO.readFile fname
    let blocks = Scripta.compile text
-   putStrLn $ Render.Block.render blocks
+   putStrLn $ header <> Render.Block.render blocks
  
+header :: String
+header = 
+   let 
+      header1 = "<!DOCTYPE HTML>\n<head>"
+      header2 = "<link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/katex.min.css\" integrity=\"sha384-bYdxxUwYipFNohQlHt0bjN/LCpueqWz13HufFEV1SUatKs1cm4L6fFgCi1jT643X\" crossorigin=\"anonymous\">"
+      header3 =  "<script defer src=\"https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/katex.min.js\" integrity=\"sha384-Qsn9KnoKISj6dI8g7p1HBlNpVx0I8p1SvlwOldgi3IorMle61nQy4zEahWYtljaz\" crossorigin=\"anonymous\"></script>"
+      header4 = "<script defer src=\"https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/contrib/auto-render.min.js\" integrity=\"sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05\" crossorigin=\"anonymous\" onload=\"renderMathInElement(document.body);\"></script>\n</head>"
+   in 
+   [header1, header2, header3, header4] |> Data.List.intercalate "\n\n"
 
 parse =
    do
