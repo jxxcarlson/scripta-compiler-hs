@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 
-module Parser.Meta (Meta(..), dummy) where
+module Compiler.Parser.Meta (Meta(..), dummy) where
 
 import Prelude hiding(id)
 import qualified Data.Text as Text 

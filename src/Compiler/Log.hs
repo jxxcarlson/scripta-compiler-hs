@@ -1,4 +1,4 @@
-module Log(xlog) where
+module Compiler.Log(xlog) where
 
 import Debug.Trace
 

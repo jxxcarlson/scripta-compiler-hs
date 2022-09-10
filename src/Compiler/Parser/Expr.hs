@@ -1,10 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Parser.Expr (Expr(..), displayExpr) where
+module Compiler.Parser.Expr (Expr(..), displayExpr) where
 
-import Parser.Meta (Meta)
 import Data.Text (Text)
 import qualified Data.Text
+
+import Compiler.Parser.Meta (Meta)
 
 data Expr
     = Fun Data.Text.Text [Expr] Meta

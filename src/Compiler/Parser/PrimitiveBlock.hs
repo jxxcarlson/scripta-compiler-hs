@@ -19,7 +19,7 @@
 
 -- https://jakewheat.github.io/intro_to_parsing/#very-simple-expression-parsing
 
-module Parser.PrimitiveBlock (PrimitiveBlock(..), args, content, checkPosition, lineNumber, position, cleanArgs, empty, parse, displayBlocks) where
+module Compiler.Parser.PrimitiveBlock (PrimitiveBlock(..), args, content, checkPosition, lineNumber, position, cleanArgs, empty, parse, displayBlocks) where
 
 
 
@@ -33,9 +33,9 @@ import Prelude hiding(init)
 import Flow ((|>))
 import Debug.Trace
 
-import qualified Parser.Line as Line
-import Parser.Line (PrimitiveBlockType(..),Line) 
-import Parser.Language (Language(..)) 
+import qualified Compiler.Parser.Line as Line
+import Compiler.Parser.Line (PrimitiveBlockType(..),Line) 
+import Compiler.Parser.Language (Language(..)) 
 
 
 
@@ -378,9 +378,9 @@ elaborate line pb =
 
         content = 
             case blockType pb  of
-                PBParagraph -> Parser.PrimitiveBlock.content pb
-                PBOrdinary -> Parser.PrimitiveBlock.content pb |> drop 1
-                PBVerbatim -> Parser.PrimitiveBlock.content pb |> drop 1 |> map Text.strip
+                PBParagraph -> Compiler.Parser.PrimitiveBlock.content pb
+                PBOrdinary -> Compiler.Parser.PrimitiveBlock.content pb |> drop 1
+                PBVerbatim -> Compiler.Parser.PrimitiveBlock.content pb |> drop 1 |> map Text.strip
 
     in
     pb{ content = content, name = name_, args = cleanArgs args_, properties = args_ |> prepareList |> prepareKVData }

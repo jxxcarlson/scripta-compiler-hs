@@ -1,8 +1,8 @@
-module L0.Match (deleteAt, getSegment, hasReducibleArgs, isReducible, match, splitAt) where
+module Compiler.L0.Match (deleteAt, getSegment, hasReducibleArgs, isReducible, match, splitAt) where
 
 
 import Prelude hiding(splitAt)
-import L0.Symbol (Symbol(..), value)
+import Compiler.L0.Symbol (Symbol(..), value) 
 import Flow ((|>))
 
 

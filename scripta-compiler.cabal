@@ -25,21 +25,21 @@ source-repository head
 
 library
   exposed-modules:
-      L0.Match
-      L0.Parser
-      L0.Symbol
-      L0.Token
-      Log
-      Parser.Base
-      Parser.Expr
-      Parser.ExprBlock
-      Parser.Language
-      Parser.Line
-      Parser.Meta
-      Parser.PrimitiveBlock
-      Render.Block
-      Render.Html
-      Scripta
+      Compiler.L0.Match
+      Compiler.L0.Parser
+      Compiler.L0.Symbol
+      Compiler.L0.Token
+      Compiler.Log
+      Compiler.Parser.Base
+      Compiler.Parser.Expr
+      Compiler.Parser.ExprBlock
+      Compiler.Parser.Language
+      Compiler.Parser.Line
+      Compiler.Parser.Meta
+      Compiler.Parser.PrimitiveBlock
+      Compiler.Render.Block
+      Compiler.Render.Html
+      Compiler.Scripta
   other-modules:
       Paths_scripta_compiler
   hs-source-dirs:

@@ -7,9 +7,9 @@ import Flow ((|>))
 import qualified Data.Text.IO as TIO
 
 
-import Parser.PrimitiveBlock(PrimitiveBlock)
-import qualified Parser.PrimitiveBlock as PB
-import Parser.Language (Language(..))
+import Compiler.Parser.PrimitiveBlock(PrimitiveBlock)
+import qualified Compiler.Parser.PrimitiveBlock as PB
+import Compiler.Parser.Language (Language(..))
 
 main :: IO ()
 main = hspec $ do

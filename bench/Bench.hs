@@ -11,7 +11,7 @@ import Parser.Language(Language(..))
 import Parser.PrimitiveBlock (PrimitiveBlock)
 import qualified Parser.PrimitiveBlock 
 import Flow ((|>))
-import qualified Scripta
+import qualified Compiler.Scripta as Scripta
 
 main :: IO ()
 main = defaultMain [

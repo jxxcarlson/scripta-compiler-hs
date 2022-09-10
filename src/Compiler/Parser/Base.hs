@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings,  DuplicateRecordFields #-}
 
-module Parser.Base (Parser, fooParser) where
+module Compiler.Parser.Base (Parser, fooParser) where
 
 -- https://markkarpov.com/tutorial/megaparsec.html
 -- https://serokell.io/blog/parser-combinators-in-haskell

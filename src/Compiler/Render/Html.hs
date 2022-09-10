@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Render.Html (producePage) where
+module Compiler.Render.Html (producePage) where
 
 -- https://jaspervdj.be/blaze/tutorial.html
 -- https://mmhaskell.com/blog/2020/3/9/blaze-lightweight-html-generation

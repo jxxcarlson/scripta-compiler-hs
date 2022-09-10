@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Render.Block (render, scriptaPage) where 
+module Compiler.Render.Block (render, scriptaPage) where 
 
     -- view-source:https://sixthform.info/katex/guide.html
     -- https://gdevanla.github.io/posts/read-you-a-blaze.html
@@ -33,10 +33,10 @@ import qualified Data.Text as Text
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Flow ((|>))
-import qualified Log (xlog)
 
-import Parser.ExprBlock (ExprBlock(..), BlockType(..))
-import Parser.Expr(Expr(..))
+import Compiler.Parser.ExprBlock (ExprBlock(..), BlockType(..))
+import qualified Compiler.Parser.ExprBlock as Parser.ExprBlock
+import Compiler.Parser.Expr(Expr(..))
 
 render :: [ExprBlock] -> String
 render blocks = 
@@ -133,7 +133,7 @@ renderOrdinaryBlock block  =
     case (Parser.ExprBlock.name block) of 
         Nothing -> p "Ordinary block: error (no name)" 
         Just "section" ->  
-            case (head_ (Parser.ExprBlock.args block) |> Log.xlog "!! ARGS" |> fmap Text.strip) of 
+            case (head_ (Parser.ExprBlock.args block) |> fmap Text.strip) of 
                 Nothing -> h1 $ renderContent (Parser.ExprBlock.content block) 
                 Just "1" -> h1 $ renderContent (Parser.ExprBlock.content block) 
                 Just "2" -> h2 $ renderContent (Parser.ExprBlock.content block) 

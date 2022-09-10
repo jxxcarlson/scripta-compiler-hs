@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings, DuplicateRecordFields #-}
 
-module Parser.ExprBlock (ExprBlock(..),BlockType(..), toExpressionBlock, Parser.ExprBlock.displayBlocks) where
+module Compiler.Parser.ExprBlock (ExprBlock(..),BlockType(..), toExpressionBlock, Compiler.Parser.ExprBlock.displayBlocks) where
 
 
 import qualified Data.Text.IO as TIO
@@ -12,14 +12,15 @@ import qualified Data.List
 import qualified Data.Map as Map
 import Prelude hiding(init)
 import Flow ((|>))
-import qualified Log
 
-import Parser.PrimitiveBlock
-import Parser.Line (PrimitiveBlockType(..)) 
-import Parser.Language (Language(..))  
-import L0.Parser  
-import Parser.Expr (Expr(..)) 
-import qualified Parser.Expr
+import qualified Compiler.Log as Log
+import Compiler.Parser.PrimitiveBlock hiding(name, lineNumber, indent, properties, content, blockType, args) 
+import qualified Compiler.Parser.PrimitiveBlock as Parser.PrimitiveBlock
+import Compiler.Parser.Line (PrimitiveBlockType(..)) 
+import Compiler.Parser.Language (Language(..))  
+import qualified Compiler.L0.Parser  as L0.Parser
+import Compiler.Parser.Expr (Expr(..)) 
+import qualified Compiler.Parser.Expr as Parser.Expr
 
 data ExprBlock
     = ExprBlock
@@ -90,23 +91,23 @@ toBlockType pbt args =
 
 displayName :: ExprBlock -> Text
 displayName block = 
-    case Parser.ExprBlock.name block of 
+    case name block of 
         Nothing -> "name: anon"
         Just txt -> ["name:",  txt] |> Text.unwords
 
 displayLineNumber :: ExprBlock -> Text
 displayLineNumber block = 
-    ["lineNumber:", (Text.pack . show) (Parser.ExprBlock.lineNumber block)] |> Text.unwords
+    ["lineNumber:", (Text.pack . show) (lineNumber block)] |> Text.unwords
 
 displayIndentation :: ExprBlock -> Text
 displayIndentation block = 
-    ["indent:", (Text.pack . show) (Parser.ExprBlock.indent block)] |> Text.unwords
+    ["indent:", (Text.pack . show) (indent block)] |> Text.unwords
 
 
 displayProperties :: ExprBlock -> Text 
 displayProperties block = 
     -- ["dict:", (dict block) |> Map.toList  |> map yazzle  |> Text.unwords] |> Text.unwords
-    ["properties:", (Parser.ExprBlock.properties block) |> Map.toList |> map yazzle  |> Text.intercalate ", "] |> Text.unwords
+    ["properties:", (properties block) |> Map.toList |> map yazzle  |> Text.intercalate ", "] |> Text.unwords
 
 yazzle :: (Text, Text)  -> Text
 yazzle (a, b) =
@@ -126,20 +127,20 @@ displayBlock block =
 
 displayContent :: ExprBlock -> Text 
 displayContent block = 
-    case Parser.ExprBlock.content block of 
+    case content block of 
         Left txt -> txt
         Right exprs -> exprs |> map Parser.Expr.displayExpr |> Text.unwords
 
 displayBlockType :: ExprBlock -> Text
 displayBlockType block = 
-    case Parser.ExprBlock.blockType block of 
+    case blockType block of 
         VerbatimBlock _ -> "type: Verbatim"
         OrdinaryBlock _ -> "type: Ordinary"
         Paragraph -> "type: Paragraph"
 
 displayArgs :: ExprBlock -> Text
 displayArgs block = 
-    ("args:" : Parser.ExprBlock.args block) |> Text.intercalate ", "   
+    ("args:" : args block) |> Text.intercalate ", "   
 
 
 displayBlocks :: [ExprBlock] -> Text

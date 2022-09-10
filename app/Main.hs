@@ -8,11 +8,11 @@ import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import qualified Data.List
 
-import Parser.PrimitiveBlock as PrimitiveBlock
-import Parser.Language(Language(..))
-import qualified Parser.ExprBlock
-import qualified Scripta
-import qualified Render.Block
+import Compiler.Parser.PrimitiveBlock as PrimitiveBlock
+import Compiler.Parser.Language(Language(..))
+import qualified Compiler.Parser.ExprBlock as Parser.ExprBlock
+import qualified Compiler.Scripta as Scripta
+import qualified Compiler.Render.Block as Render.Block
 
 
 main :: IO ()

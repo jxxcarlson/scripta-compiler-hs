@@ -1,10 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module L0.Token (parse, prettyPrint, extractMathText, getIndex, getLoc, type_, TokenType(..), L0.Token.length, L0Token(..), Loc(..)) where
+module Compiler.L0.Token (parse, prettyPrint, extractMathText, getIndex, getLoc, type_, TokenType(..), length, L0Token(..), Loc(..)) where
 import qualified Data.Text as Text 
 import Data.Text (Text) 
-import Data.List 
+import Data.List hiding(length)
 import Data.List.Index (imap)
+import Prelude hiding(length)
 
 import Text.Megaparsec (parseMaybe, choice, satisfy, many, takeWhileP, getOffset, Parsec, Token, MonadParsec)
 import Text.Megaparsec.Char (string)

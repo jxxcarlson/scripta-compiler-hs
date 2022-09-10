@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings,  DuplicateRecordFields #-}
 
-module Parser.Line(PrimitiveBlockType(..), Line, getNameAndArgs, isEmpty, indent, prefix,content, lineNumber, position, classify, getBlockType) where
+module Compiler.Parser.Line(PrimitiveBlockType(..), Line, getNameAndArgs, isEmpty, indent, prefix,content, lineNumber, position, classify, getBlockType) where
 
 -- https://markkarpov.com/tutorial/megaparsec.html
 -- https://serokell.io/blog/parser-combinators-in-haskell
@@ -11,7 +11,7 @@ import Data.Text (Text)
 import Text.Megaparsec
 import Data.Void
 
-import Parser.Language (Language(..)) 
+import Compiler.Parser.Language (Language(..)) 
 
 data Line =
     Line { indent :: Int, prefix :: Text, content :: Text, lineNumber :: Int, position :: Int } deriving(Show)

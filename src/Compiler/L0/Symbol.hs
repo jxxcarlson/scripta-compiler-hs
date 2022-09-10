@@ -1,12 +1,12 @@
 {-# LANGUAGE OverloadedStrings, DuplicateRecordFields #-}
 
-module L0.Symbol (Symbol(..), balance, toText, toSymbols, value) where
+module Compiler.L0.Symbol (Symbol(..), balance, toText, toSymbols, value) where
 
 import qualified Data.Text as Text 
 import Data.Text (Text) 
 import Flow ((|>))
 
-import L0.Token(L0Token(..))
+import Compiler.L0.Token(L0Token(..))
 
 
 data Symbol

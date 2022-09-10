@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings, DuplicateRecordFields #-}
 
-module L0.Parser (run) where
+module Compiler.L0.Parser (run) where
 
 import qualified Data.Text as Text 
 import Data.Text (Text) 
@@ -12,13 +12,14 @@ import Flow ((|>))
 import Prelude hiding(id)
 import Debug.Trace
 
-import L0.Token (L0Token(..), Loc(..), TokenType(..))
-import qualified L0.Token as Token
-import Parser.Expr(Expr(..))
-import Parser.Meta(Meta(..))
-import L0.Match as M
-import L0.Symbol
-import qualified L0.Match as Match
+import Compiler.L0.Token (L0Token(..), Loc(..), TokenType(..))
+import qualified Compiler.L0.Token as Token
+import Compiler.Parser.Expr(Expr(..))
+import qualified Compiler.Parser.Expr as Parser.Expr
+import Compiler.Parser.Meta(Meta(..))
+import Compiler.L0.Match as M
+import Compiler.L0.Symbol as L0.Symbol
+import qualified Compiler.L0.Match as Match
 
 
 
@@ -150,9 +151,9 @@ reduceTokens lineNumber tokens =
                     txt  = Text (drop 1 ws |>  Text.unwords) dummyLocWithId
                 in 
                 if length ws <= 1 then
-                  [ Fun name_ (reduceRestOfTokens lineNumber (drop 1 args)) (boostMeta lineNumber (L0.Token.index loc) loc) ]
+                  [ Fun name_ (reduceRestOfTokens lineNumber (drop 1 args)) (boostMeta lineNumber (Token.index loc) loc) ]
                 else 
-                  [ Fun name_ (txt : (reduceRestOfTokens lineNumber (drop 1 args))) (boostMeta lineNumber (L0.Token.index loc) loc) ]
+                  [ Fun name_ (txt : (reduceRestOfTokens lineNumber (drop 1 args))) (boostMeta lineNumber (Token.index loc) loc) ]
                 
 
             _ ->
@@ -162,10 +163,10 @@ reduceTokens lineNumber tokens =
     else
         case tokens of            
             (MathToken loc) : rest ->
-                Verbatim "math" (Token.extractMathText rest) (boostMeta lineNumber (L0.Token.index loc) loc) : []
+                Verbatim "math" (Token.extractMathText rest) (boostMeta lineNumber (Token.index loc) loc) : []
             
             (CodeToken loc) : (S str _) : (CodeToken _) : rest ->
-                Verbatim "code" str (boostMeta lineNumber (L0.Token.index loc) loc) : reduceRestOfTokens lineNumber rest
+                Verbatim "code" str (boostMeta lineNumber (Token.index loc) loc) : reduceRestOfTokens lineNumber rest
 
             _ ->
                 [ errorMessage "[????]" ]
