@@ -1,10 +1,27 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Render.Block (render, renderSpan) where 
+module Render.Block (render, scriptaPage) where 
 
     -- view-source:https://sixthform.info/katex/guide.html
     -- https://gdevanla.github.io/posts/read-you-a-blaze.html
     -- https://mmhaskell.com/blog/2020/3/9/blaze-lightweight-html-generation
+
+
+-- <select dojoType="select">foo</select>
+-- Can be produced using:
+
+-- select ! customAttribute "dojoType" "select" $ "foo"
+
+-- https://hackage.haskell.org/package/blaze-markup-0.8.2.3/docs/Text-Blaze.html#v:customAttribute
+-- page1 :: Markup
+-- page1 = html $ do
+--     head $ do
+--         title "Introduction page."
+--         link ! rel "stylesheet" ! type_ "text/css" ! href "screen.css"
+--     body $ do
+--         div ! id "header" $ "Syntax"
+--         p "This is an example of BlazeMarkup syntax."
+--         ul $ mapM_ (li . toMarkup . show) [1, 2, 3]
 
 import Control.Monad (forM_)
 import Text.Blaze.Html5 as H
@@ -21,14 +38,49 @@ import qualified Log (xlog)
 import Parser.ExprBlock (ExprBlock(..), BlockType(..))
 import Parser.Expr(Expr(..))
 
-render1 :: [ExprBlock] -> String
-render1 blocks =  renderHtml $ H.div $ toHtml $ Prelude.map render_ blocks 
-
-
 render :: [ExprBlock] -> String
 render blocks = 
  do
    renderHtml $ toHtml $ Prelude.map render_ blocks 
+
+
+scriptaPage :: [ExprBlock] -> String
+scriptaPage blocks = renderHtml $ toHtml $ html $ do
+    H.head $ do
+        title "Scripta-hs Demo"
+        katexLinkCss
+        katexScriptJS
+        katexAutoRenderJS
+        localCss
+    body $ do
+        toHtml $ Prelude.map render_ blocks 
+
+
+katexLinkCss =
+        link ! customAttribute "rel" "stylesheet"
+             ! customAttribute "href" "https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/katex.min.css"
+             ! customAttribute "integrity" "sha384-bYdxxUwYipFNohQlHt0bjN/LCpueqWz13HufFEV1SUatKs1cm4L6fFgCi1jT643X"
+             ! customAttribute "crossorigin" "anonymous"
+           
+
+katexScriptJS =
+        script ! customAttribute "defer src" "https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/katex.min.js"
+               ! customAttribute "integrity" "sha384-Qsn9KnoKISj6dI8g7p1HBlNpVx0I8p1SvlwOldgi3IorMle61nQy4zEahWYtljaz"
+               ! customAttribute "crossorigin" "anonymous"
+               $ ""
+           
+
+katexAutoRenderJS =
+        script ! customAttribute "defer src" "https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/contrib/auto-render.min.js"
+               ! customAttribute "integrity" "sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05"
+               ! customAttribute  "onload" "renderMathInElement(document.body);"
+               ! customAttribute "crossorigin" "anonymous"
+               $ ""
+           
+localCss =
+        link ! customAttribute "rel" "stylesheet"
+             ! customAttribute "href" "style.css"
+           
 
 
 
