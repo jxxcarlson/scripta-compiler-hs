@@ -1,4 +1,4 @@
-module Compiler.Scripta (compile, compleToHtmlString, compleToHtmlText) where
+module Compiler.Scripta (compile, compileToHtmlString, compileToHtmlText) where
 
 import Prelude
 
@@ -22,11 +22,11 @@ compile sourceText =
       |> Prelude.map Parser.ExprBlock.toExpressionBlock
 
 
-compleToHtmlString :: Data.Text.Text -> String
-compleToHtmlString sourceText = 
+compileToHtmlString :: Data.Text.Text -> String
+compileToHtmlString sourceText = 
   sourceText |> compile |> Compiler.Render.Block.renderToString
 
 
-compleToHtmlText :: Data.Text.Text -> Data.Text.Internal.Lazy.Text
-compleToHtmlText sourceText = 
+compileToHtmlText :: Data.Text.Text -> Data.Text.Internal.Lazy.Text
+compileToHtmlText sourceText = 
   sourceText |> compile |> Compiler.Render.Block.renderToText 
