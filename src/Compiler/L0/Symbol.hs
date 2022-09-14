@@ -13,7 +13,7 @@ data Symbol
     = L -- LB, [
     | R -- RB, ]
     | ST -- S String (string)
-    | M -- $
+    | M -- dollar sign
     | C -- `
     | WS -- W String (whitespace)
     deriving(Eq, Show)

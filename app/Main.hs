@@ -30,7 +30,6 @@ compileToHtml fname =
   do 
    text <- TIO.readFile fname
    let blocks = Scripta.compile text
-   putStrLn $ "<!DOCTYPE HTML>\n"
    putStrLn $ Render.Block.scriptaPage blocks
 
 parse fname =

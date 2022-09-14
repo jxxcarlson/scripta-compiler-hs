@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Compiler.Render.Block (render, scriptaPage) where 
+module Compiler.Render.Block (scriptaPage) where 
 
     -- view-source:https://sixthform.info/katex/guide.html
     -- https://gdevanla.github.io/posts/read-you-a-blaze.html
@@ -38,22 +38,28 @@ import Compiler.Parser.ExprBlock (ExprBlock(..), BlockType(..))
 import qualified Compiler.Parser.ExprBlock as Parser.ExprBlock
 import Compiler.Parser.Expr(Expr(..))
 
-render :: [ExprBlock] -> String
-render blocks = 
- do
-   renderHtml $ toHtml $ Prelude.map render_ blocks 
+-- render :: [ExprBlock] -> String
+-- render blocks = 
+--  do
+--    renderHtml $ toHtml $ Prelude.map render_ blocks 
+
+render :: [ExprBlock] -> Html
+render blocks = toHtml $ do
+    H.docType
+    html $ do
+        H.head $ do
+            title "Scripta-hs Demo"
+
+            katexLinkCss
+            katexScriptJS
+            katexAutoRenderJS
+            localCss
+        body $ do
+            toHtml $ Prelude.map render_ blocks 
 
 
 scriptaPage :: [ExprBlock] -> String
-scriptaPage blocks = renderHtml $ toHtml $ html $ do
-    H.head $ do
-        title "Scripta-hs Demo"
-        katexLinkCss
-        katexScriptJS
-        katexAutoRenderJS
-        localCss
-    body $ do
-        toHtml $ Prelude.map render_ blocks 
+scriptaPage blocks = renderHtml $ render blocks
 
 
 katexLinkCss =

@@ -25,7 +25,6 @@ data L0Token
     | MathToken Loc
     | CodeToken Loc
     deriving (Eq, Show)
-    -- | TokenError (List (DeadEnd Context Problem)) Loc
 
 
 extractMathText :: [L0Token] -> Text
