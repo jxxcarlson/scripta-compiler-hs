@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Compiler.Render.Block (scriptaPage) where 
+module Compiler.Render.Block (renderToString,renderToText) where 
 
     -- view-source:https://sixthform.info/katex/guide.html
     -- https://gdevanla.github.io/posts/read-you-a-blaze.html
@@ -27,8 +27,12 @@ import Control.Monad (forM_)
 import Text.Blaze.Html5 as H
 
 import qualified Text.Blaze.Html5.Attributes as A
-import Text.Blaze.Html.Renderer.Pretty
+import qualified Text.Blaze.Html.Renderer.Pretty as RenderPretty
+import qualified Text.Blaze.Html.Renderer.Text
+
+import Data.Text.Internal.Lazy 
 import Data.Text (Text)
+
 import qualified Data.Text as Text
 import Data.Map (Map)
 import qualified Data.Map as Map
@@ -43,8 +47,8 @@ import Compiler.Parser.Expr(Expr(..))
 --  do
 --    renderHtml $ toHtml $ Prelude.map render_ blocks 
 
-render :: [ExprBlock] -> Html
-render blocks = toHtml $ do
+renderToHtml :: [ExprBlock] -> Html
+renderToHtml blocks = toHtml $ do
     H.docType
     html $ do
         H.head $ do
@@ -58,8 +62,11 @@ render blocks = toHtml $ do
             toHtml $ Prelude.map render_ blocks 
 
 
-scriptaPage :: [ExprBlock] -> String
-scriptaPage blocks = renderHtml $ render blocks
+renderToString :: [ExprBlock] -> String
+renderToString blocks = RenderPretty.renderHtml $ renderToHtml blocks
+
+renderToText :: [ExprBlock] -> Data.Text.Internal.Lazy.Text
+renderToText blocks = Text.Blaze.Html.Renderer.Text.renderHtml $ renderToHtml blocks
 
 
 katexLinkCss =
@@ -97,7 +104,7 @@ render_ block =
         OrdinaryBlock args -> renderOrdinaryBlock block
         VerbatimBlock args -> renderVerbatimBlock block
 
-renderContent :: Either Text [Expr] -> Html
+renderContent :: Either Data.Text.Text [Expr] -> Html
 renderContent input = 
     case input of 
         Left txt -> p $ toHtml txt 
@@ -118,7 +125,7 @@ renderExpr expr =
 
 
 
-functionDict :: Map Text ([Expr] -> Html)
+functionDict :: Map Data.Text.Text ([Expr] -> Html)
 functionDict = Map.fromList [
        ("i", \body -> em (toHtml $ Prelude.map renderExpr body))
     ,  ("b", \body -> strong (toHtml $ Prelude.map renderExpr body)) 
@@ -184,7 +191,7 @@ renderImage block =
         img ! A.src url ! A.width (textValue w) ! A.class_ claas
         p ! A.class_ claas $ toHtml caption
            
-verbatimContent :: ExprBlock -> Text
+verbatimContent :: ExprBlock -> Data.Text.Text
 verbatimContent block = 
     case (Parser.ExprBlock.content block) of 
         Left txt -> txt

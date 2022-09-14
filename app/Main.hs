@@ -30,7 +30,7 @@ compileToHtml fname =
   do 
    text <- TIO.readFile fname
    let blocks = Scripta.compile text
-   putStrLn $ Render.Block.scriptaPage blocks
+   putStrLn $ Render.Block.renderToString blocks
 
 parse fname =
    do
